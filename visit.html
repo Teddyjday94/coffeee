@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visit · Ember &amp; Oak Coffee</title>
+  <meta name="description" content="Hours, directions, parking and everything else you need to find Ember & Oak. Plus catering, events and wholesale.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,600;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/" } }
+  </script>
+</head>
+<body class="page-visit">
+  <main>
+    <section class="visit visit-hero">
+      <div class="visit-grid">
+        <div>
+          <p class="eyebrow">Visit us</p>
+          <h1 class="page-title light"><span>Come</span> <span class="accent">on in</span></h1>
+          <p data-open-status></p>
+          <p class="address" id="address"></p>
+          <div class="actions">
+            <a class="btn light" id="directions" target="_blank" rel="noopener">Get directions ↗</a>
+            <a class="btn ghost-light" id="call">Call us</a>
+          </div>
+        </div>
+        <figure class="map" data-reveal aria-label="Map showing the shop's location">
+          <svg viewBox="0 0 480 400" role="img" aria-hidden="true">
+            <rect width="480" height="400" fill="#2a1711"/>
+            <path d="M-20 300 C 90 260, 150 340, 260 300 S 420 230, 500 260 L 500 330 C 420 300, 330 380, 250 360 S 80 330, -20 370 Z" fill="#3b5560" opacity=".55"/>
+            <rect x="300" y="-14" width="160" height="88" rx="14" fill="#3d4a2c" opacity=".7"/>
+            <g stroke="#5a3a2c" stroke-width="14" stroke-linecap="round">
+              <path d="M-10 90 H490"/><path d="M-10 200 H490"/><path d="M80 -10 V410"/><path d="M230 -10 V410"/><path d="M380 -10 V410"/>
+            </g>
+            <g stroke="#4a2f23" stroke-width="6" stroke-linecap="round">
+              <path d="M-10 145 H490"/><path d="M155 -10 V280"/><path d="M305 160 V280"/><path d="M-10 250 H230"/>
+            </g>
+            <g fill="#3a2219">
+              <rect x="100" y="105" width="40" height="30" rx="4"/><rect x="170" y="105" width="45" height="30" rx="4"/>
+              <rect x="100" y="160" width="40" height="28" rx="4"/><rect x="245" y="105" width="45" height="30" rx="4"/>
+              <rect x="245" y="160" width="45" height="28" rx="4"/><rect x="320" y="165" width="45" height="25" rx="4"/>
+              <rect x="20" y="105" width="45" height="30" rx="4"/><rect x="20" y="160" width="45" height="28" rx="4"/>
+              <rect x="170" y="215" width="45" height="28" rx="4"/><rect x="100" y="215" width="40" height="28" rx="4"/>
+            </g>
+            <text x="380" y="40" fill="#8fa070" font-family="Inter, sans-serif" font-size="12" font-weight="600" text-anchor="middle" letter-spacing="2">PARK</text>
+            <text transform="translate(234 20) rotate(90)" fill="#9c7a66" font-family="Inter, sans-serif" font-size="10" font-weight="600" letter-spacing="2" dominant-baseline="middle">MAIN ST</text>
+            <text x="300" y="94" fill="#9c7a66" font-family="Inter, sans-serif" font-size="10" font-weight="600" letter-spacing="2" dominant-baseline="middle">OAK AVE</text>
+            <g transform="translate(230 200)">
+              <circle r="34" fill="#e9a06b" opacity=".18" class="pulse"/>
+              <circle r="18" fill="#e9a06b" opacity=".3"/>
+              <path d="M0 6 C -14 -10, -16 -18, -16 -24 A16 16 0 1 1 16 -24 C 16 -18, 14 -10, 0 6 Z" fill="#f4e3cf" transform="translate(0 -10)"/>
+              <circle cy="-34" r="6" fill="#7d2418"/>
+            </g>
+          </svg>
+          <figcaption>Ember &amp; Oak · <span id="map-street"></span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="hours-week">
+      <div class="split">
+        <div data-reveal>
+          <p class="eyebrow">Hours</p>
+          <h2>When we're pouring</h2>
+          <p class="split-note">Holiday hours get posted on Instagram a week ahead. The pastry case usually sells out by 2pm.</p>
+        </div>
+        <dl class="week" id="week" data-reveal></dl>
+      </div>
+    </section>
+
+    <section class="amenities">
+      <p class="eyebrow">The space</p>
+      <h2 data-reveal>Stay as long as you like</h2>
+      <ul class="amenity-grid" id="amenities"></ul>
+    </section>
+
+    <section class="getting-here">
+      <p class="eyebrow">Getting here</p>
+      <ul class="here-grid" id="getting-here"></ul>
+    </section>
+
+    <section class="faq">
+      <div class="split">
+        <div data-reveal>
+          <p class="eyebrow">Questions</p>
+          <h2>Good to know</h2>
+        </div>
+        <div class="faq-list" id="faq"></div>
+      </div>
+    </section>
+
+    <section class="contact" id="contact">
+      <div class="split">
+        <div data-reveal>
+          <p class="eyebrow">Say hello</p>
+          <h2>Events, catering &amp; wholesale</h2>
+          <p class="split-note">Planning an office coffee bar, a wedding espresso cart or stocking our beans? Tell us a little and we'll get back within two business days.</p>
+        </div>
+        <form class="contact-form" id="contact-form" novalidate data-reveal>
+          <label>Name <input name="name" autocomplete="name" required></label>
+          <label>Email <input name="email" type="email" autocomplete="email" required></label>
+          <label>Topic
+            <select name="topic">
+              <option>General question</option>
+              <option>Catering &amp; events</option>
+              <option>Wholesale</option>
+              <option>Private room booking</option>
+            </select>
+          </label>
+          <label class="full">Message <textarea name="message" rows="5" required></textarea></label>
+          <div class="full form-foot">
+            <button type="submit" class="btn">Send message</button>
+            <p class="fine">Demo form: messages aren't sent anywhere yet.</p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="visit.js"></script>
+</body>
+</html>

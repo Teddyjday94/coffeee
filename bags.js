@@ -242,7 +242,18 @@ function valveTexture(kind) {
 
 /* ---------- Render ---------- */
 
-export async function renderBagImages(beans, { width = 560, height = 680 } = {}) {
+// Yield to the event loop without setTimeout, which Chrome throttles to as
+// little as once a minute in background tabs.
+function yieldToPage() {
+  if (globalThis.scheduler?.yield) return scheduler.yield();
+  return new Promise((resolve) => {
+    const ch = new MessageChannel();
+    ch.port1.onmessage = () => resolve();
+    ch.port2.postMessage(0);
+  });
+}
+
+export async function renderBagImages(beans, { width = 560, height = 680, onEach } = {}) {
   const canvas = document.createElement('canvas');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(1);
@@ -288,7 +299,9 @@ export async function renderBagImages(beans, { width = 560, height = 680 } = {})
   valve.rotation.x = Math.PI / 2 - 0.25; // face forward, tilted with the pinch
   bag.add(valve);
 
-  const toBlobURL = () => new Promise((resolve) => canvas.toBlob((b) => resolve(URL.createObjectURL(b)), 'image/png'));
+  // Synchronous encode: toBlob is throttled to ~1s per call in background tabs.
+  // WebP keeps transparency and is far smaller (browsers without WebP encoding fall back to PNG).
+  const snapshot = () => canvas.toDataURL('image/webp', 0.92);
   const out = new Map();
 
   for (const bean of beans) {
@@ -310,11 +323,12 @@ export async function renderBagImages(beans, { width = 560, height = 680 } = {})
     for (const [view, rotY] of [['front', -0.16], ['angle', 0.6]]) {
       bag.rotation.y = rotY;
       renderer.render(scene, camera);
-      urls[view] = await toBlobURL();
+      urls[view] = snapshot();
     }
     out.set(bean.name, urls);
+    onEach?.(bean.name, urls);
     [side, front, back, valveTex].forEach((t) => t.dispose());
-    await new Promise((r) => setTimeout(r)); // let the page breathe between bags
+    await yieldToPage(); // let the page breathe between bags
   }
 
   renderer.dispose();

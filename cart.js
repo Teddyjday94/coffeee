@@ -37,7 +37,7 @@ function isOpenNow(now = new Date()) {
   return !!today && h >= today.open && h < today.close - 0.25;
 }
 
-export function createCart({ countEl, bagBtn, onAdd }) {
+export function createCart({ countEl, bagBtn, onAdd, onChange }) {
   let items = load();
   let step = 'bag';
   let images = new Map();
@@ -56,7 +56,17 @@ export function createCart({ countEl, bagBtn, onAdd }) {
     save(items);
     countEl.textContent = count();
     render();
+    onChange?.(items);
   }
+
+  // Another tab or page changed the bag.
+  addEventListener('storage', (e) => {
+    if (e.key !== KEY) return;
+    items = load();
+    countEl.textContent = count();
+    render();
+    onChange?.(items);
+  });
 
   function add(item) {
     const id = `${item.kind}|${item.name}|${item.option}`;
@@ -77,7 +87,8 @@ export function createCart({ countEl, bagBtn, onAdd }) {
   }
 
   function thumb(i) {
-    if (i.kind === 'beans' && images.get(i.name)) return `<img src="${images.get(i.name).front}" alt="">`;
+    const img = i.bean && images.get(i.bean);
+    if (img) return `<img src="${img.front}" alt="">`;
     return `<span class="thumb-cup" style="--c:${i.color}"></span>`;
   }
 
@@ -89,20 +100,20 @@ export function createCart({ countEl, bagBtn, onAdd }) {
           <p class="empty-title">Your bag is empty</p>
           <p>Grab a drink for pickup or a bag of beans for home.</p>
           <div class="empty-actions">
-            <a class="btn" href="#drinks" data-close>Browse drinks</a>
-            <a class="btn ghost" href="#beans" data-close>Shop beans</a>
+            <a class="btn" href="menu.html" data-close>Browse drinks</a>
+            <a class="btn ghost" href="shop.html" data-close>Shop beans</a>
           </div>
         </div>`;
       foot.innerHTML = '';
       return;
     }
     body.innerHTML = `<ul class="lines">${items.map((i) => `
-      <li class="line">
+      <li class="bag-line">
         <div class="thumb">${thumb(i)}</div>
-        <div class="line-main">
-          <div class="line-row"><strong>${esc(i.name)}</strong><span>${money(i.price * i.qty)}</span></div>
-          <p class="line-opt">${esc(i.option)}</p>
-          <div class="line-row">
+        <div class="bag-line-main">
+          <div class="bag-line-row"><strong>${esc(i.name)}</strong><span>${money(i.price * i.qty)}</span></div>
+          <p class="bag-line-opt">${esc(i.option)}</p>
+          <div class="bag-line-row">
             <div class="stepper" role="group" aria-label="Quantity of ${esc(i.name)}">
               <button type="button" data-qty="${esc(i.id)}" data-d="-1" aria-label="Remove one">−</button>
               <span aria-live="polite">${i.qty}</span>
@@ -234,6 +245,7 @@ export function createCart({ countEl, bagBtn, onAdd }) {
   return {
     add,
     open,
+    items: () => items,
     setImages(map) { images = map; if (drawer.classList.contains('open')) render(); },
   };
 }

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Menu · Ember &amp; Oak Coffee</title>
+  <meta name="description" content="Signature iced drinks, espresso classics, tea and fresh pastries. Order ahead for pickup.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,600;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/" } }
+  </script>
+</head>
+<body class="page-menu">
+  <div class="loader" aria-hidden="true"><span>Ember &amp; Oak</span><i></i></div>
+  <canvas id="stage" aria-hidden="true"></canvas>
+
+  <main>
+    <section class="drinks" id="drinks" aria-roledescription="carousel" aria-label="Signature drinks">
+      <h1 class="sr-only">Menu</h1>
+      <div class="drinks-top">
+        <p class="eyebrow">Signature drinks · Iced &amp; over</p>
+        <p class="eyebrow drinks-hint">Drag the cup to spin it</p>
+      </div>
+      <div class="drink-disc" aria-hidden="true"></div>
+      <h2 class="drink-name" id="drink-name" aria-live="polite"></h2>
+      <div class="drinks-bottom">
+        <div class="drink-info">
+          <p class="drink-count"><span id="drink-index">01</span> / <span id="drink-total">09</span></p>
+          <p class="drink-desc" id="drink-desc"></p>
+          <div class="drink-buy">
+            <p class="drink-price" id="drink-price"></p>
+            <div class="sizes" role="radiogroup" aria-label="Size">
+              <button type="button" role="radio" aria-checked="true" data-size="0">12 oz</button>
+              <button type="button" role="radio" aria-checked="false" data-size="1">16 oz</button>
+            </div>
+            <button type="button" class="add-drink" id="drink-add">Add to order</button>
+          </div>
+        </div>
+        <div class="drink-controls">
+          <button type="button" class="round" id="drink-prev" aria-label="Previous drink">←</button>
+          <div class="dots" id="drink-dots" role="tablist" aria-label="Choose a drink"></div>
+          <button type="button" class="round solid" id="drink-next" aria-label="Next drink">→</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="menu-page" id="full-menu">
+      <div class="menu-intro">
+        <div>
+          <p class="eyebrow">The full menu</p>
+          <h2 data-reveal>Pour decisions, made daily</h2>
+        </div>
+        <nav class="menu-tabs" aria-label="Menu sections">
+          <a href="#signature">Signature iced</a>
+          <a href="#espresso">Espresso bar</a>
+          <a href="#tea">Tea &amp; more</a>
+          <a href="#bakery">From the case</a>
+        </nav>
+      </div>
+      <div id="menu-sections"></div>
+      <p class="extras" id="extras"></p>
+    </section>
+  </main>
+
+  <noscript><p class="noscript">The 3D parts of this site need JavaScript and WebGL.</p></noscript>
+  <script type="module" src="menu.js"></script>
+</body>
+</html>

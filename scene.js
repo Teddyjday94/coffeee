@@ -518,8 +518,12 @@ export function createBeanField(count = 34) {
     // Keep a loose clearing around the centre so beans frame the cup.
     let x, y;
     do { x = rand(-7.5, 7.5); y = rand(-3.6, 3.6); } while (Math.abs(x - 1.5) < 1.3 && Math.abs(y) < 1.6);
+    // Big close-up beans stay off the headline/copy (left on desktop, top on phones)
+    // so they never sit right behind the text.
+    let z = rand(-5, 3.2);
+    if (z > -0.5 && (x < 0.5 || y > 0.8)) z = rand(-5, -2);
     items.push({
-      pos: new THREE.Vector3(x, y, rand(-5, 3.2)),
+      pos: new THREE.Vector3(x, y, z),
       rot: new THREE.Euler(rand(0, 6), rand(0, 6), rand(0, 6)),
       spin: new THREE.Vector3(rand(-0.6, 0.6), rand(-0.6, 0.6), rand(-0.6, 0.6)),
       scale: rand(1.2, 2.6),

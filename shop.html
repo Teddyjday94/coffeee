@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shop beans · Ember &amp; Oak Coffee</title>
+  <meta name="description" content="Fresh-roasted single origins, blends and decaf. Roasted Tuesday, shipped Wednesday. Subscribe and save 10%.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,600;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/" } }
+  </script>
+</head>
+<body class="page-shop">
+  <main>
+    <section class="page-head shop-head">
+      <p class="eyebrow">The shop</p>
+      <h1 class="page-title"><span>Beans worth</span> <span class="accent">the trip</span></h1>
+      <p class="page-lede">Twelve coffees, roasted every Tuesday in small batches and shipped Wednesday. Pick one up in the shop or have it on your doorstep by the weekend.</p>
+      <ul class="perks">
+        <li><b>Free shipping</b> over $40</li>
+        <li><b>Roasted to order</b> every Tuesday</li>
+        <li><b>Local pickup</b> always free</li>
+      </ul>
+    </section>
+
+    <section class="beans" id="beans">
+      <div class="shop-toolbar">
+        <div class="chips" role="group" aria-label="Filter beans">
+          <button type="button" class="chip active" data-filter="all">All</button>
+          <button type="button" class="chip" data-filter="single">Single origin</button>
+          <button type="button" class="chip" data-filter="blend">Blends</button>
+          <button type="button" class="chip" data-filter="decaf">Decaf</button>
+        </div>
+        <label class="sort">Sort by
+          <select id="sort">
+            <option value="featured">Featured</option>
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="roast-asc">Roast: light to dark</option>
+            <option value="roast-desc">Roast: dark to light</option>
+          </select>
+        </label>
+      </div>
+      <p class="result-count" id="result-count" aria-live="polite"></p>
+      <ul class="grid" id="bean-grid"></ul>
+    </section>
+
+    <section class="subscribe" id="subscribe">
+      <div class="subscribe-visual" id="sub-visual" aria-hidden="true"></div>
+      <div class="subscribe-copy" data-reveal>
+        <p class="eyebrow">Subscribe &amp; save 10%</p>
+        <h2>Never run out again</h2>
+        <p>Pick a coffee and how often you go through it. We roast it fresh and ship it the next day. Skip, swap or cancel any time.</p>
+        <form class="sub-form" id="sub-form">
+          <label>Coffee
+            <select name="bean" id="sub-bean"></select>
+          </label>
+          <label>Delivery
+            <select name="freq" id="sub-freq"></select>
+          </label>
+          <label>Grind
+            <select name="grind" id="sub-grind"></select>
+          </label>
+          <div class="sub-price" id="sub-price"></div>
+          <button type="submit" class="btn light">Start subscription</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="brew-guide" id="brew">
+      <div class="feature-head">
+        <div>
+          <p class="eyebrow">Brew guide</p>
+          <h2 data-reveal>Get it right at home</h2>
+        </div>
+        <p class="feature-note">Start with these, then trust your taste buds. Measure coffee by weight; it makes the biggest difference.</p>
+      </div>
+      <ul class="guides" id="guides"></ul>
+    </section>
+  </main>
+
+  <dialog class="product" id="product" aria-labelledby="product-name">
+    <button type="button" class="icon-btn product-close" id="product-close" aria-label="Close">×</button>
+    <div class="product-grid">
+      <div class="product-visual" id="product-visual">
+        <div class="product-views" role="group" aria-label="Bag view">
+          <button type="button" aria-pressed="true" data-view="front">Front</button>
+          <button type="button" aria-pressed="false" data-view="angle">Side</button>
+        </div>
+      </div>
+      <div class="product-info" id="product-info"></div>
+    </div>
+  </dialog>
+
+  <script type="module" src="shop.js"></script>
+</body>
+</html>

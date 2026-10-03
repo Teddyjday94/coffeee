@@ -16,14 +16,27 @@ Then open http://localhost:5192.
 
 ## Files
 
+Four pages, each with its own script:
+
+| Page | Script | What's on it |
+| --- | --- | --- |
+| `index.html` | `home.js` | 3D hero cup with floating beans, story, featured drinks and beans, visit strip |
+| `menu.html` | `menu.js` | 3D iced-drink carousel, then the full menu with add-to-order |
+| `shop.html` | `shop.js` | Bean grid with filters and sorting, product dialog, subscriptions, brew guide |
+| `visit.html` | `visit.js` | Map, live open status, weekly hours, amenities, getting here, FAQ, contact form |
+
+Shared modules:
+
 | File | What it does |
 | --- | --- |
-| `content.js` | All copy and data: drinks, beans, hours, address, story. Edit this to rebrand. |
+| `content.js` | All copy and data: drinks, menu, beans, hours, address, story, FAQ. Edit this to rebrand. |
+| `common.js` | Nav, mobile menu, footer, toast, scroll reveals, hours helpers, bag-image cache. |
+| `cart.js` | Bag drawer, quantities, pickup checkout. Saved to localStorage so it follows you across pages. |
 | `scene.js` | Three.js scene: the hot and iced cups, toppings, floating beans, ingredient bursts. |
-| `bags.js` | Models a stand-up coffee pouch and renders one product image per bean. |
-| `cart.js` | Bag drawer, quantities, pickup checkout (saved to localStorage). |
-| `main.js` | Scroll choreography, carousel, shop, story and visit wiring. |
+| `bags.js` | Models a stand-up coffee pouch and renders product images for each bean. |
 | `style.css` | All styles. |
+
+Deep links work: `menu.html#mocha-midnight` opens that drink in the carousel, and `shop.html#gesha-reserve` opens that coffee's detail dialog.
 
 ## Before going live
 
