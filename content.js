@@ -208,4 +208,14 @@ export const FAQ = [
   { q: 'Are there non-dairy options?', a: 'Oat and almond milk are always free. Our banana bread and avocado toast are vegan, and the hot chocolate is gluten free.' },
 ];
 
+// "A day at Ember & Oak" timeline on the home page. at = hour of the day (24h).
+export const DAY = [
+  { at: 6, time: '6:00am', title: 'Ovens on', text: 'Croissants go in and the whole block starts to smell like butter.' },
+  { at: 7, time: '7:00am', title: 'Doors open', text: 'First shots pulled. The regulars are usually already waiting.' },
+  { at: 9.5, time: '9:30am', title: 'Rush hour', text: 'The pickup shelf works overtime. Order ahead and skip the line.' },
+  { at: 12, time: '12:00pm', title: "Iced o'clock", text: 'Cold brew and signature drinks take over the bar.' },
+  { at: 14, time: '2:00pm', title: 'Case empties', text: 'Last croissant goes around now. We did warn you.' },
+  { at: 18, time: '6:00pm', title: 'Last call', text: 'Final pour, lights down, see you tomorrow.' },
+];
+
 export const TAX_RATE = 0.0825;

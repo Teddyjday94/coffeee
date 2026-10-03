@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createStage, createProduct, createBeanField, ease } from './scene.js';
-import { initChrome, $, $$, reduceMotion, money, slug, reveal, countUp, fontsReady, createSpin, getBagImages, hoursFor, fmtHour } from './common.js';
-import { DRINKS, BEANS, STORY, LOCATION } from './content.js';
+import { initChrome, $, $$, reduceMotion, money, slug, reveal, countUp, fontsReady, createSpin, getBagImages, hoursFor, fmtHour, openStatus } from './common.js';
+import { DRINKS, BEANS, STORY, LOCATION, DAY } from './content.js';
 
 const { smoothstep, lerp, clamp } = THREE.MathUtils;
 initChrome('home');
@@ -52,8 +52,8 @@ $('#featured-drinks').innerHTML = FEATURED_DRINKS.map((n) => DRINKS.find((d) => 
   <li data-reveal style="--bg:${d.bg};--ink:${d.ink};transition-delay:${i * 80}ms">
     <a href="menu.html#${slug(d.name)}" class="drink-card">
       <span class="drink-visual" aria-hidden="true">
-        <img class="drink-img front" src="img/drinks/${slug(d.name)}-front.webp" alt="" width="960" height="1140" loading="lazy" decoding="async">
-        <img class="drink-img angle" src="img/drinks/${slug(d.name)}-angle.webp" alt="" width="960" height="1140" loading="lazy" decoding="async">
+        <img class="drink-img front" src="img/drinks/${slug(d.name)}-front.webp" alt="" width="960" height="1140" decoding="async">
+        <img class="drink-img angle" src="img/drinks/${slug(d.name)}-angle.webp" alt="" width="960" height="1140" decoding="async" fetchpriority="low">
       </span>
       <span class="drink-card-name">${d.name}</span>
       <span class="drink-card-desc">${d.desc}</span>
@@ -70,6 +70,43 @@ $('#featured-beans').innerHTML = featuredBeans.map((b, i) => `
       <span class="bean-tile-notes">${b.origin} · ${b.notes}</span>
     </a>
   </li>`).join('');
+
+/* ---------- A day at Ember & Oak ---------- */
+
+$('#timeline').innerHTML = DAY.map((s, i) => `
+  <li data-reveal style="transition-delay:${i * 70}ms">
+    <span class="tl-dot" aria-hidden="true"></span>
+    <span class="tl-time">${s.time}</span>
+    <h3>${s.title}</h3>
+    <p>${s.text}</p>
+  </li>`).join('');
+
+function renderDay() {
+  const now = new Date();
+  const h = now.getHours() + now.getMinutes() / 60;
+  const status = openStatus(now);
+  const first = DAY[0].at, last = DAY[DAY.length - 1].at;
+  let current = -1;
+  DAY.forEach((s, i) => { if (h >= s.at) current = i; });
+  if (h >= last + 1) current = -1; // after closing, nothing is "now"
+  $$('#timeline li').forEach((li, i) => {
+    li.classList.toggle('past', current >= 0 && i < current);
+    li.classList.toggle('now', i === current);
+  });
+  $('#timeline').style.setProperty('--progress', current < 0 ? 0 : Math.min(1, (h - first) / (last - first)));
+  $('#day-now').textContent = status.open && current >= 0 ? `Right now: ${DAY[current].title.toLowerCase()}` : status.text;
+  $('#day-now').classList.toggle('is-open', status.open);
+}
+renderDay();
+setInterval(renderDay, 60000);
+
+// Vertical (phone) timeline: the track should end exactly at the last dot.
+function measureTrack() {
+  const items = $$('#timeline li');
+  $('#timeline').style.setProperty('--track', `${items.at(-1).offsetTop - items[0].offsetTop}px`);
+}
+measureTrack();
+addEventListener('resize', measureTrack);
 
 /* ---------- Visit strip ---------- */
 

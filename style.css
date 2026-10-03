@@ -783,6 +783,77 @@ body.drawer-open { overflow: hidden; }
 .visit-strip-info { display: grid; gap: 14px; justify-items: start; font-size: 17px; line-height: 1.5; }
 .visit-strip .status { background: rgba(255, 255, 255, 0.12); }
 
+/* ---------- A day at Ember & Oak ---------- */
+.day {
+  position: relative;
+  z-index: 2;
+  padding: 120px var(--gutter);
+  background: radial-gradient(90% 120% at 15% 0%, #f8e4d2 0%, var(--peach) 60%);
+}
+.day .eyebrow { color: var(--maroon); margin-bottom: 12px; }
+.day h2 { font-family: var(--display); font-weight: 400; font-size: clamp(44px, 6vw, 96px); line-height: 0.92; text-transform: uppercase; }
+.day-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 250, 244, 0.7);
+  font-size: 14px;
+  font-weight: 600;
+}
+.day-now::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #d0644a; }
+.day-now.is-open::before { background: #5fb463; box-shadow: 0 0 0 4px rgba(95, 180, 99, 0.2); }
+.timeline {
+  --progress: 0;
+  --gap: 24px;
+  position: relative;
+  list-style: none;
+  margin: 64px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--gap);
+}
+/* The track runs from the first dot to the last; the filled part shows how far into the day we are. */
+.timeline::before, .timeline::after {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: 10px;
+  height: 2px;
+  border-radius: 2px;
+}
+.timeline::before { width: calc(100% - (100% - 5 * var(--gap)) / 6); background: rgba(125, 36, 24, 0.18); }
+.timeline::after { width: calc(var(--progress) * (100% - (100% - 5 * var(--gap)) / 6)); background: var(--maroon); transition: width 1.2s var(--ease-out); }
+.timeline li { position: relative; padding-top: 40px; }
+.tl-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--maroon);
+  background: var(--peach);
+  transition: background 0.4s;
+}
+.timeline li.past .tl-dot, .timeline li.now .tl-dot { background: var(--maroon); }
+.timeline li.now .tl-dot::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--maroon);
+  animation: ping 2s var(--ease-out) infinite;
+}
+.tl-time { display: block; font-family: var(--display); font-size: clamp(24px, 2.2vw, 34px); color: var(--maroon); }
+.timeline h3 { margin: 6px 0 8px; font-size: 18px; font-weight: 600; }
+.timeline p { font-size: 14px; line-height: 1.6; color: var(--muted); }
+.timeline li.now h3::after { content: 'Now'; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--maroon); color: #fff4ea; font-size: 11px; vertical-align: middle; }
+.timeline li.past { opacity: 0.6; }
+
 /* ---------- Menu page ---------- */
 .menu-page { position: relative; z-index: 2; background: var(--paper); padding: 120px var(--gutter); }
 .menu-intro { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 28px; margin-bottom: 56px; }
@@ -1101,6 +1172,13 @@ button.card-visual { width: 100%; padding: 0; border: 0; cursor: zoom-in; }
   .stats, .process { margin-top: 56px; }
   .drink-price { font-size: 28px; }
   .drink-cards, .bean-feature { grid-template-columns: 1fr; }
+  .day { padding: 80px var(--gutter); }
+  .timeline { grid-template-columns: 1fr; gap: 28px; margin-top: 40px; }
+  .timeline::before, .timeline::after { top: 10px; left: 9px; width: 2px; }
+  .timeline::before { height: var(--track, calc(100% - 20px)); }
+  .timeline::after { height: calc(var(--progress) * var(--track, calc(100% - 20px))); transition: height 1.2s var(--ease-out); }
+  .timeline li { padding: 0 0 0 40px; }
+  .tl-dot { top: 4px; }
   .bean-feature { grid-template-columns: 1fr 1fr; }
   .bean-feature li:nth-child(3) { display: none; }
   .drink-card { min-height: 500px; }
