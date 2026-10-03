@@ -49,9 +49,12 @@ $('#process').innerHTML = STORY.steps.map((s, i) => `
 
 const FEATURED_DRINKS = ['Caramel Cloud', 'Mocha Midnight', 'Matcha Meadow'];
 $('#featured-drinks').innerHTML = FEATURED_DRINKS.map((n) => DRINKS.find((d) => d.name === n)).map((d, i) => `
-  <li data-reveal style="--bg:${d.bg};--ink:${d.ink};--top:${d.liquid.top};--bottom:${d.liquid.bottom};transition-delay:${i * 80}ms">
+  <li data-reveal style="--bg:${d.bg};--ink:${d.ink};transition-delay:${i * 80}ms">
     <a href="menu.html#${slug(d.name)}" class="drink-card">
-      <span class="drink-visual" data-drink="${d.name}" aria-hidden="true"><span class="mini-cup"><i></i></span></span>
+      <span class="drink-visual" aria-hidden="true">
+        <img class="drink-img front" src="img/drinks/${slug(d.name)}-front.webp" alt="" width="960" height="1140" loading="lazy" decoding="async">
+        <img class="drink-img angle" src="img/drinks/${slug(d.name)}-angle.webp" alt="" width="960" height="1140" loading="lazy" decoding="async">
+      </span>
       <span class="drink-card-name">${d.name}</span>
       <span class="drink-card-desc">${d.desc}</span>
       <span class="drink-card-price">${money(d.price)}</span>
@@ -140,17 +143,7 @@ renderer.setAnimationLoop(() => {
         const urls = map.get(slot.dataset.bag);
         if (urls) slot.innerHTML = `<img class="bag-img front" src="${urls.front}" alt="12 oz bag of ${slot.dataset.bag}"><img class="bag-img angle" src="${urls.angle}" alt="" aria-hidden="true">`;
       });
-    }).then(() => import('./drinks.js')).then(({ renderDrinkImages }) =>
-      // Then swap the placeholder cups on the drink cards for real 3D renders.
-      renderDrinkImages(FEATURED_DRINKS.map((n) => DRINKS.find((d) => d.name === n)), {
-        onEach: (name, urls) => {
-          const slot = $(`#featured-drinks .drink-visual[data-drink="${name}"]`);
-          if (!slot) return;
-          slot.insertAdjacentHTML('beforeend', `<img class="drink-img front" src="${urls.front}" alt=""><img class="drink-img angle" src="${urls.angle}" alt="">`);
-          slot.classList.add('ready');
-        },
-      }),
-    ).catch((err) => console.warn('Drink renders failed', err)), 700);
+    }), 700);
   }
 
   if (p > 1.2) {
