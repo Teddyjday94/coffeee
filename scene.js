@@ -248,7 +248,7 @@ function drizzleOnWhip(curve) {
   return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 400, 0.016, 6);
 }
 
-function buildIcedCup() {
+export function buildIcedCup() {
   const g = new THREE.Group();
 
   // Liquid: a lathe with per-vertex colours so we can paint a layered pour.
