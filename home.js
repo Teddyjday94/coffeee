@@ -204,5 +204,6 @@ renderer.setAnimationLoop(() => {
   beans.update(reduceMotion ? 0 : t, (1 - smoothstep(p, 0.3, 0.9)) * introK);
   beans.group.position.set(spin.sx * 0.35, p * L.vh * 1.4 + spin.sy * 0.2, 0);
 
+  if (!reduceMotion) product.update(dt, t); // steam
   renderer.render(scene, camera);
 });

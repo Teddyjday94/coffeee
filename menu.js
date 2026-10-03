@@ -101,7 +101,7 @@ function setDrink(i, { auto = false } = {}) {
   disc.classList.add('pulse');
   if (!auto) history.replaceState(null, '', `#${slug(d.name)}`);
   if (product) measureSlot(); // the name can change height between one and two lines
-  product?.setDrink(d);
+  product?.setDrink(d, reduceMotion); // drains, then pours the new drink
   if (fxOn) fx.show(d);
   if (!reduceMotion) spinKick += dir * 0.25;
 }
@@ -145,7 +145,8 @@ const { renderer, scene, camera } = createStage($('#stage'));
 product = createProduct();
 fx = createIngredientBurst();
 product.hot.visible = false;
-product.setDrink(DRINKS[current], true);
+// Start with an empty cup and pour the first drink once the cup has appeared.
+product.setDrink(DRINKS[current], reduceMotion, { fromEmpty: true, delay: 0.7 });
 scene.add(fx.group, product.group);
 
 // On phones the drink name sits above the cup and the controls below it, so

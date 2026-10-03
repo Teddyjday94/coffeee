@@ -138,7 +138,56 @@ function buildHotCup() {
   sip.rotation.set(0.62, 0, Math.PI / 2);
   g.add(sip);
 
+  g.userData.update = buildSteam(g, new THREE.Vector3(0, 2.26, 0.42));
   return g;
+}
+
+/* ---------- Steam (hot cup) ---------- */
+
+function steamTexture() {
+  // A soft, slightly lumpy puff so overlapping sprites read as vapour, not discs.
+  return canvasTexture(128, 128, (ctx, w) => {
+    const c = w / 2;
+    for (let i = 0; i < 7; i++) {
+      const x = c + rand(-18, 18), y = c + rand(-18, 18), r = rand(26, 46);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(255,255,255,0.32)');
+      g.addColorStop(0.55, 'rgba(255,255,255,0.12)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, w);
+    }
+  }, { color: false });
+}
+
+// Wisps rise from the sip hole, widen, drift and fade. Returns update(dt, time).
+function buildSteam(parent, origin, count = 30) {
+  const map = steamTexture();
+  const puffs = Array.from({ length: count }, (_, i) => {
+    const mat = new THREE.SpriteMaterial({ map, color: '#fffaf4', transparent: true, depthWrite: false, opacity: 0 });
+    const s = new THREE.Sprite(mat);
+    s.renderOrder = 5;
+    parent.add(s);
+    return { s, life: i / count, speed: rand(0.24, 0.36), sway: rand(0, Math.PI * 2), spin: rand(-0.6, 0.6), drift: rand(-0.12, 0.12) };
+  });
+  return (dt, time) => {
+    for (const p of puffs) {
+      p.life = (p.life + dt * p.speed) % 1;
+      const k = p.life;
+      // Rise and curl: two sine layers so the column bends instead of wobbling.
+      const curl = Math.sin(time * 0.7 + k * 4 + p.sway) * 0.22 + Math.sin(time * 1.3 + k * 7) * 0.08;
+      p.s.position.set(
+        origin.x + (curl + p.drift) * k,
+        origin.y + k * 2.3,
+        origin.z - k * 0.3,
+      );
+      const size = 0.28 + k * 1.3;
+      p.s.scale.set(size, size * 1.2, 1);
+      p.s.material.rotation = p.sway + time * p.spin * 0.3;
+      // Quick fade in at the lid, long soft fade out as it spreads.
+      p.s.material.opacity = smoothstep(k, 0, 0.1) * (1 - smoothstep(k, 0.25, 1)) * 0.95;
+    }
+  };
 }
 
 /* ---------- Iced drink cup (carousel) ---------- */
@@ -340,9 +389,31 @@ export function buildIcedCup() {
 
   const strawMat = new THREE.MeshStandardMaterial({ color: '#2b140a', roughness: 0.35 });
   const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 2.3, 18), strawMat);
-  straw.position.set(0.2, 1.95, -0.1);
+  const STRAW_Y = 1.95;
+  straw.position.set(0.2, STRAW_Y, -0.1);
   straw.rotation.set(0.1, 0, -0.2);
   g.add(straw);
+
+  // Pour stream: a glossy column whose top is far above the cup and whose
+  // bottom tracks the rising surface. Unit height, hanging down from y = 0.
+  const streamMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.1 });
+  const streamGeo = new THREE.CylinderGeometry(0.06, 0.05, 1, 24, 1);
+  streamGeo.translate(0, -0.5, 0);
+  const stream = new THREE.Mesh(streamGeo, streamMat);
+  stream.position.set(-0.08, 0, 0.05);
+  stream.visible = false;
+  g.add(stream);
+  const STREAM_TOP = 6;
+
+  // Ripples where the stream hits the surface.
+  const rippleMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, depthWrite: false });
+  const ripples = [0, 1, 2].map(() => {
+    const r = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 8, 48), rippleMat.clone());
+    r.rotation.x = Math.PI / 2;
+    r.visible = false;
+    g.add(r);
+    return r;
+  });
 
   // Toppings
   const topping = new THREE.Group();
@@ -373,7 +444,6 @@ export function buildIcedCup() {
     if (t) creamMat.color.set(t.color);
     if (t?.drizzle) sauceMat.color.set(t.drizzle);
   }
-  const toppingAnim = { phase: 'idle', t: 0, next: null };
 
   // Colour state, eased toward the target drink every frame.
   const cur = { bottom: new THREE.Color(), top: new THREE.Color(), straw: new THREE.Color(), split: 0.5 };
@@ -395,51 +465,144 @@ export function buildIcedCup() {
     strawMat.color.copy(cur.straw);
   }
 
-  function setDrink(drink, instant = false) {
+  /*
+   * Pour timeline (seconds from the start of a drink change):
+   *   0.00–0.35  drain: old drink empties, topping shrinks, straw lifts out
+   *   0.35–1.95  pour: the bottom layer pours in first, then the top layer,
+   *              which blooms down into it; ice floats on the rising surface
+   *   1.95–2.15  the stream's tail falls into the cup
+   *   1.95–2.65  topping grows back, straw drops in
+   */
+  const T = { drainEnd: 0.35, pourEnd: 1.95, tailEnd: 2.15, strawIn: 2.0, end: 2.7 };
+  const pour = { t: -1, level: 1, topping: null, wait: 0 };
+  const surfaceY = () => BASE + (FILL - BASE) * pour.level;
+  let shownSplit = 0.5;
+
+  function setTopping(s) {
+    topping.scale.set(Math.max(s, 1e-3), Math.max(s, 1e-3), Math.max(s, 1e-3));
+  }
+
+  function setDrink(drink, instant = false, { fromEmpty = false, delay = 0 } = {}) {
+    pour.wait = delay;
     tgt.bottom.set(drink.liquid.bottom);
     tgt.top.set(drink.liquid.top);
     tgt.straw.set(drink.straw);
     tgt.split = drink.liquid.split;
+    pour.topping = drink.topping;
     if (instant) {
+      pour.t = -1;
+      pour.level = 1;
       cur.bottom.copy(tgt.bottom);
       cur.top.copy(tgt.top);
       cur.straw.copy(tgt.straw);
-      cur.split = tgt.split;
+      cur.split = shownSplit = tgt.split;
       paint();
       applyTopping(drink.topping);
-      topping.scale.setScalar(1);
+      setTopping(1);
+      straw.position.y = STRAW_Y;
+      straw.visible = true;
+      layout(0);
       return;
     }
-    toppingAnim.phase = 'shrink';
-    toppingAnim.t = 0;
-    toppingAnim.next = drink.topping;
+    // A fresh cup skips the drain and starts pouring straight away.
+    pour.t = fromEmpty ? T.drainEnd : 0;
+    if (fromEmpty) {
+      pour.level = 0;
+      setTopping(0);
+      straw.position.y = STRAW_Y + 3;
+      straw.visible = false;
+      switchColors();
+    }
+  }
+
+  // Swap to the new drink's colours while the cup is empty.
+  function switchColors() {
+    cur.bottom.copy(tgt.bottom);
+    cur.top.copy(tgt.top);
+    cur.straw.copy(tgt.straw);
+    shownSplit = 1; // all bottom layer until the top layer starts pouring
+    cur.split = shownSplit;
+    paint();
+    applyTopping(pour.topping);
+  }
+
+  // Place everything that depends on the liquid level.
+  function layout(time) {
+    liquid.visible = pour.level > 0.04;
+    liquid.scale.y = Math.max(pour.level, 0.01);
+    const drop = (FILL - BASE) * (1 - pour.level);
+    ice.forEach((m, i) => {
+      // Floats on the surface; settles on the bottom when the cup is empty.
+      m.position.y = Math.max(0.16 + i * 0.03, m.userData.baseY - drop) + Math.sin(time * 1.3 + i * 1.7) * 0.02 * pour.level;
+    });
   }
 
   function update(dt, time) {
-    const k = 1 - Math.exp(-dt * 3.5);
-    const before = cur.top.getHex() + cur.bottom.getHex() + cur.split;
-    cur.bottom.lerp(tgt.bottom, k);
-    cur.top.lerp(tgt.top, k);
-    cur.straw.lerp(tgt.straw, k);
-    cur.split = lerp(cur.split, tgt.split, k);
-    if (cur.top.getHex() + cur.bottom.getHex() + cur.split !== before) paint();
-    ice.forEach((m, i) => { m.position.y = m.userData.baseY + Math.sin(time * 1.3 + i * 1.7) * 0.02; });
-
-    if (toppingAnim.phase === 'shrink') {
-      toppingAnim.t += dt / 0.22;
-      const s = 1 - clamp(toppingAnim.t, 0, 1);
-      topping.scale.set(Math.max(s, 1e-3), Math.max(s, 1e-3), Math.max(s, 1e-3));
-      if (toppingAnim.t >= 1) {
-        applyTopping(toppingAnim.next);
-        toppingAnim.phase = 'grow';
-        toppingAnim.t = 0;
-      }
-    } else if (toppingAnim.phase === 'grow') {
-      toppingAnim.t += dt / 0.7;
-      const s = ease.outBack(clamp(toppingAnim.t, 0, 1));
-      topping.scale.set(Math.max(s, 1e-3), Math.max(s, 1e-3), Math.max(s, 1e-3));
-      if (toppingAnim.t >= 1) toppingAnim.phase = 'idle';
+    if (pour.t < 0 || pour.wait > 0) {
+      pour.wait -= dt;
+      layout(time);
+      return;
     }
+    const prev = pour.t;
+    pour.t += dt;
+    const t = pour.t;
+    const pourK = clamp((t - T.drainEnd) / (T.pourEnd - T.drainEnd), 0, 1);
+
+    // Liquid level
+    if (t < T.drainEnd) pour.level = 1 - ease.inOut(t / T.drainEnd);
+    else pour.level = Math.min(1, ease.out(pourK) * 0.15 + pourK * 0.85);
+    if (prev < T.drainEnd && t >= T.drainEnd) switchColors();
+
+    // Topping out, then back in once the pour is done
+    if (t < T.drainEnd) setTopping(1 - clamp(t / 0.22, 0, 1));
+    else if (t < T.pourEnd) setTopping(0);
+    else setTopping(ease.outBack(clamp((t - T.pourEnd) / 0.7, 0, 1)));
+
+    // Straw lifts out, then drops back in
+    if (t < T.drainEnd) straw.position.y = STRAW_Y + ease.inOut(t / T.drainEnd) * 3;
+    else if (t < T.strawIn) straw.position.y = STRAW_Y + 3;
+    else straw.position.y = STRAW_Y + 3 * (1 - ease.outBack(clamp((t - T.strawIn) / 0.55, 0, 1)));
+    straw.visible = straw.position.y < STRAW_Y + 1.6; // hidden while lifted out, so it can't read as a second stream
+
+    // Two-stage pour: bottom layer first, then the top layer blooms down into it
+    const topStart = 1 - tgt.split * 0.85; // when the top layer starts pouring
+    const pouringTop = pourK >= topStart;
+    if (t >= T.drainEnd) {
+      const bloom = clamp((pourK - topStart) / (1 - topStart + 0.25), 0, 1);
+      const split = lerp(1, tgt.split, ease.out(bloom));
+      if (Math.abs(split - shownSplit) > 0.002) {
+        shownSplit = cur.split = split;
+        paint();
+      }
+    }
+
+    // Stream
+    const surface = surfaceY();
+    stream.visible = t >= T.drainEnd && t < T.tailEnd;
+    if (stream.visible) {
+      const tail = clamp((t - T.pourEnd) / (T.tailEnd - T.pourEnd), 0, 1);
+      const top = lerp(STREAM_TOP, surface, ease.inOut(tail));
+      stream.position.y = top;
+      stream.scale.y = Math.max(top - surface, 0.001);
+      const wobble = 1 + 0.08 * Math.sin(time * 38) + 0.05 * Math.sin(time * 23 + 1);
+      const thin = t > T.pourEnd ? 1 - tail * 0.6 : Math.min(1, (t - T.drainEnd) / 0.12);
+      stream.scale.x = stream.scale.z = wobble * thin;
+      streamMat.color.copy(pouringTop ? cur.top : cur.bottom);
+    }
+
+    // Ripples spreading from where the stream lands
+    ripples.forEach((r, i) => {
+      const phase = ((t * 2.6 + i / ripples.length) % 1);
+      r.visible = t >= T.drainEnd + 0.1 && t < T.pourEnd && pour.level > 0.05;
+      if (!r.visible) return;
+      const rad = 0.08 + phase * 0.45;
+      r.position.set(stream.position.x, surface + 0.01, stream.position.z);
+      r.scale.set(rad, rad, rad * 0.4);
+      r.material.opacity = 0.45 * (1 - phase);
+    });
+
+    layout(time);
+    if (t >= T.end) pour.t = -1;
   }
 
   return { group: g, setDrink, update };
@@ -478,7 +641,10 @@ export function createProduct() {
   return {
     group, spinner, hot, iced, shadow,
     setDrink: icedCup.setDrink,
-    update: icedCup.update,
+    update(dt, time) {
+      if (iced.visible) icedCup.update(dt, time);
+      if (hot.visible) hotCup.userData.update(dt, time);
+    },
   };
 }
 
