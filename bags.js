@@ -9,11 +9,16 @@ import { canvasTexture } from './scene.js';
 const W = 1.0, H = 1.45, D = 0.42;
 const { smoothstep } = THREE.MathUtils;
 
+// light: true papers get a brighter label so it doesn't look muddy.
 const PAPER = {
   kraft: { base: '#c39a6b', ink: '#2a170d', roughness: 0.92, speckle: 0.5 },
   black: { base: '#1f1b1a', ink: '#efe6da', roughness: 0.7, speckle: 0.25 },
-  white: { base: '#ece6db', ink: '#2a170d', roughness: 0.78, speckle: 0.3 },
+  white: { base: '#ece6db', ink: '#2a170d', roughness: 0.78, speckle: 0.3, light: true },
+  forest: { base: '#24412f', ink: '#f1e8d6', roughness: 0.75, speckle: 0.25 },
+  navy: { base: '#1d2840', ink: '#efe6da', roughness: 0.72, speckle: 0.25 },
+  blush: { base: '#d99c94', ink: '#3a1a18', roughness: 0.8, speckle: 0.3, light: true },
 };
+const isDark = (kind) => !PAPER[kind].light && kind !== 'kraft'; // dark bags get a dark valve
 
 /* ---------- Geometry ---------- */
 
@@ -119,7 +124,7 @@ function frontTexture(bean) {
 
     // label sticker
     const lx = 120, ly = 470, lw = w - 240, lh = 760;
-    const labelBg = kind === 'white' ? `hsl(${bean.hue}, 50%, 40%)` : `hsl(${bean.hue}, 42%, 32%)`;
+    const labelBg = PAPER[kind].light ? `hsl(${bean.hue}, 50%, 40%)` : `hsl(${bean.hue}, 42%, 32%)`;
     ctx.shadowColor = 'rgba(0,0,0,0.18)';
     ctx.shadowBlur = 6;
     ctx.shadowOffsetY = 2;
@@ -187,8 +192,8 @@ function frontTexture(bean) {
       ctx.arc(0, 0, 70, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#2a170d';
-      ctx.font = '400 32px Anton, Impact, sans-serif';
       ctx.letterSpacing = '2px';
+      fitText(ctx, bean.badge.toUpperCase(), 118, 34, '400 {s}px Anton, Impact, sans-serif');
       ctx.fillText(bean.badge.toUpperCase(), 0, 2);
       ctx.restore();
     }
@@ -225,9 +230,9 @@ function crimpBump() {
 function valveTexture(kind) {
   return canvasTexture(128, 128, (ctx, w) => {
     const c = w / 2;
-    ctx.fillStyle = kind === 'black' ? '#2a2524' : '#f2eee8';
+    ctx.fillStyle = isDark(kind) ? '#2a2524' : '#f2eee8';
     ctx.fillRect(0, 0, w, w);
-    ctx.fillStyle = kind === 'black' ? '#0b0909' : '#9a9088';
+    ctx.fillStyle = isDark(kind) ? '#0b0909' : '#9a9088';
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2;
       ctx.beginPath();
@@ -316,7 +321,7 @@ export async function renderBagImages(beans, { width = 560, height = 680, onEach
     Object.assign(backMat, { map: back, roughness: rough });
     Object.assign(sealMat, { map: side, roughness: rough });
     valveMat.map = valveTex;
-    valveSide.color.set(kind === 'black' ? '#2a2524' : '#f2eee8');
+    valveSide.color.set(isDark(kind) ? '#2a2524' : '#f2eee8');
     [sideMat, frontMat, backMat, sealMat, valveMat].forEach((m) => { m.needsUpdate = true; });
 
     const urls = {};

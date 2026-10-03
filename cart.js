@@ -87,6 +87,7 @@ export function createCart({ countEl, bagBtn, onAdd, onChange }) {
   }
 
   function thumb(i) {
+    if (i.image) return `<img src="${esc(i.image)}" alt="">`;
     const img = i.bean && images.get(i.bean);
     if (img) return `<img src="${img.front}" alt="">`;
     return `<span class="thumb-cup" style="--c:${i.color}"></span>`;

@@ -69,6 +69,48 @@ export const DRINKS = [
     topping: { type: 'foam', color: '#e9dcf8' },
     fx: [{ type: 'berry', colors: ['#2b1a3d', '#4a2a6b'], count: 11 }, { type: 'leaf', colors: ['#c9a8ef', '#e7d6fb'], count: 8 }],
   },
+  {
+    name: 'Strawberry Matcha', price: 6.25, desc: 'Ceremonial matcha · strawberry milk',
+    bg: '#f0a3b4', ink: '#3a1220',
+    liquid: { bottom: '#f5bccb', top: '#6a9a2a', split: 0.56 }, straw: '#3a1220',
+    topping: null,
+    fx: [{ type: 'berry', colors: ['#d7263d', '#ef4a5f', '#b3162f'], count: 10 }, { type: 'leaf', colors: ['#5c8c28', '#7cab3a'], count: 9 }],
+  },
+  {
+    name: 'Espresso Tonic', price: 5.25, desc: 'Double shot · tonic · lemon peel',
+    bg: '#f2c94c', ink: '#2a1a05',
+    liquid: { bottom: '#f7efc6', top: '#3d1d0b', split: 0.62 }, straw: '#2a1a05',
+    topping: null,
+    fx: [{ type: 'lemon', colors: ['#ffffff'], count: 12 }, { type: 'bean', colors: ['#4a2616'], count: 6 }],
+  },
+  {
+    name: 'Butterfly Pea Lemonade', price: 5.5, desc: 'Butterfly pea tea · lemonade · no coffee',
+    bg: '#4c63d2', ink: '#f2f4ff',
+    liquid: { bottom: '#f4e36a', top: '#3c4fc4', split: 0.45 }, straw: '#f2f4ff',
+    topping: null,
+    fx: [{ type: 'lemon', colors: ['#ffffff'], count: 9 }, { type: 'bud', colors: ['#6b4fd8', '#8f7cf0', '#3b2fa8'], count: 12 }],
+  },
+  {
+    name: 'Brown Sugar Shaken', price: 5.75, desc: 'Shaken espresso · brown sugar · oat milk',
+    bg: '#a0633a', ink: '#fff1e2',
+    liquid: { bottom: '#ead7bc', top: '#6e3a1a', split: 0.48 }, straw: '#fff1e2',
+    topping: null,
+    fx: [{ type: 'cube', colors: ['#b0773a', '#8a5426', '#c48a4a'], count: 11 }, { type: 'stick', colors: ['#7a3e1d'], count: 6 }],
+  },
+  {
+    name: 'Black Cherry Cold Brew', price: 5.75, desc: 'Cold brew · black cherry · sweet cream',
+    bg: '#7c1730', ink: '#fde4ea',
+    liquid: { bottom: '#3a0d14', top: '#f6e4e2', split: 0.72 }, straw: '#fde4ea',
+    topping: { type: 'foam', color: '#f8e2e4' },
+    fx: [{ type: 'berry', colors: ['#5a0a1c', '#8e1630', '#b3243f'], count: 12 }, { type: 'bean', colors: ['#4a2616'], count: 5 }],
+  },
+  {
+    name: 'Vanilla Sweet Cream', price: 5.5, desc: 'Cold brew · vanilla bean sweet cream',
+    bg: '#e8d9bd', ink: '#2b1a0d',
+    liquid: { bottom: '#2a160c', top: '#f4ead8', split: 0.68 }, straw: '#2b1a0d',
+    topping: { type: 'foam', color: '#fbf5e8' },
+    fx: [{ type: 'stick', colors: ['#2f1d10', '#3e2614'], count: 8 }, { type: 'bean', colors: ['#5a2e18'], count: 8 }],
+  },
 ];
 
 export const LARGE_UPCHARGE = 0.75;
@@ -100,6 +142,18 @@ export const BEANS = [
     blurb: 'A tiny lot of the most celebrated variety in coffee. Delicate, perfumed, unforgettable.' },
   { name: 'Night Owl', origin: 'Swiss water decaf', process: 'Colombia · Decaf', notes: 'Brown sugar, cocoa, plum', hue: 225, price: 19, type: 'decaf', paper: 'black', roast: 3, altitude: '1,500–1,800 m',
     blurb: 'Decaffeinated with only water, so all the flavor stays. Nobody will know.' },
+  { name: 'Holiday Ember', origin: 'Seasonal blend', process: 'Ethiopia · Colombia · Sumatra', notes: 'Gingerbread, dark cherry, cocoa', hue: 2, price: 20, type: 'blend', paper: 'forest', roast: 4, badge: 'Seasonal', altitude: '1,200–2,000 m',
+    blurb: 'Our winter blend. Spiced, rich and made for long nights and short days.' },
+  { name: 'Kayanza', origin: 'Burundi', process: 'Natural · Red Bourbon', notes: 'Hibiscus, red grape, honey', hue: 318, price: 23, type: 'single', paper: 'blush', roast: 2, badge: 'New', altitude: '1,750–1,950 m',
+    blurb: 'Bright and juicy, like a cup of berry tea with a spoonful of honey.' },
+  { name: 'Huye', origin: 'Rwanda', process: 'Washed · Red Bourbon', notes: 'Black tea, plum, brown sugar', hue: 22, price: 21, type: 'single', paper: 'white', roast: 2, altitude: '1,700–1,900 m',
+    blurb: 'Clean and elegant, with a black tea finish that lingers.' },
+  { name: 'Haraz', origin: 'Yemen', process: 'Natural · Udaini', notes: 'Dried fig, cardamom, dark chocolate', hue: 36, price: 34, type: 'single', paper: 'navy', roast: 3, badge: 'Limited', altitude: '2,000–2,400 m',
+    blurb: 'From terraced farms on the mountains where coffee trading began. Wild and complex.' },
+  { name: 'Cajamarca', origin: 'Peru', process: 'Washed · Organic', notes: 'Milk chocolate, walnut, red apple', hue: 118, price: 18, type: 'single', paper: 'kraft', roast: 3, altitude: '1,600–2,000 m',
+    blurb: 'Certified organic and endlessly drinkable. A great everyday single origin.' },
+  { name: 'Cold Brew Blend', origin: 'Made for cold brew', process: 'Brazil · Sumatra', notes: 'Chocolate fudge, toasted almond, cherry', hue: 205, price: 19, type: 'blend', paper: 'navy', roast: 4, altitude: '900–1,500 m',
+    blurb: 'Roasted a touch darker for a smooth, chocolatey cold brew concentrate.' },
 ];
 
 export const GRINDS = ['Whole bean', 'Espresso', 'Pour over', 'French press', 'Drip'];

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createStage, createProduct, createIngredientBurst, ease } from './scene.js';
-import { initChrome, $, $$, reduceMotion, money, slug, reveal, fontsReady, createSpin } from './common.js';
+import { initChrome, $, $$, reduceMotion, money, slug, reveal, fontsReady, createSpin, drinkImage } from './common.js';
 import { DRINKS, MENU, EXTRAS, LARGE_UPCHARGE } from './content.js';
 
 const { lerp } = THREE.MathUtils;
@@ -9,8 +9,9 @@ const { cart } = initChrome('menu');
 /* ---------- Full menu list ---------- */
 
 const TAG_LABEL = { V: 'Vegan', GF: 'Gluten free' };
-const item = ({ name, price, desc, tags = [] }, extra = '') => `
+const item = ({ name, price, desc, tags = [] }, extra = '', thumb = '') => `
   <li class="menu-item" data-reveal>
+    ${thumb ? `<img class="menu-thumb" src="${thumb}" alt="" width="960" height="1140" loading="lazy" decoding="async">` : ''}
     <div class="menu-item-main">
       <div class="menu-row"><h4>${name}</h4><span class="leader" aria-hidden="true"></span><span class="menu-price">${money(price)}</span></div>
       <p>${desc}${tags.map((t) => ` <abbr class="tag" title="${TAG_LABEL[t]}">${t}</abbr>`).join('')}</p>
@@ -25,7 +26,7 @@ $('#menu-sections').innerHTML = `
   <section class="menu-section" id="signature">
     <div class="menu-section-head"><h3>Signature iced</h3><p>Our house creations. Tap "View" to see one up close.</p></div>
     <ul class="menu-items">
-      ${DRINKS.map((d) => item(d, `<button type="button" class="view-btn" data-view="${slug(d.name)}" style="--c:${d.liquid.top}">View</button>`)).join('')}
+      ${DRINKS.map((d) => item(d, `<button type="button" class="view-btn" data-view="${slug(d.name)}" style="--c:${d.liquid.top}">View</button>`, drinkImage(d.name).front)).join('')}
     </ul>
   </section>
   ${MENU.map((sec) => `
@@ -40,7 +41,7 @@ $('#menu-sections').addEventListener('click', (e) => {
   const add = e.target.closest('[data-add]');
   if (add) {
     const it = allItems.find((i) => i.name === add.dataset.add);
-    cart.add({ kind: 'drink', name: it.name, option: it.iced ? '12 oz · Iced' : 'Regular', price: it.price, color: it.liquid?.top ?? '#8a5a3b' });
+    cart.add({ kind: 'drink', name: it.name, option: it.iced ? '12 oz · Iced' : 'Regular', price: it.price, color: it.liquid?.top ?? '#8a5a3b', image: it.iced ? drinkImage(it.name).front : undefined });
   }
   const view = e.target.closest('[data-view]');
   if (view) {
@@ -114,7 +115,7 @@ $$('[data-size]', drinksEl).forEach((b) => b.addEventListener('click', () => {
 $('#drink-add').addEventListener('click', () => {
   const d = DRINKS[current];
   lastInteraction = performance.now();
-  cart.add({ kind: 'drink', name: d.name, option: `${size ? '16 oz' : '12 oz'} · Iced`, price: drinkPrice(), color: d.liquid.top });
+  cart.add({ kind: 'drink', name: d.name, option: `${size ? '16 oz' : '12 oz'} · Iced`, price: drinkPrice(), color: d.liquid.top, image: drinkImage(d.name).front });
 });
 $('#drink-prev').addEventListener('click', () => setDrink(current - 1));
 $('#drink-next').addEventListener('click', () => setDrink(current + 1));

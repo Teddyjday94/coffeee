@@ -600,19 +600,25 @@ function stickGeometry() {
   return g;
 }
 
-function sliceFaceTexture() {
+const CITRUS = {
+  orange: { rind: '#f07a12', pith: '#fff1d6', inner: '#ffc266', outer: '#ff8c1a' },
+  lemon: { rind: '#e8bd0c', pith: '#fff6c8', inner: '#ffe45c', outer: '#f5c816' },
+};
+
+function sliceFaceTexture(kind = 'orange') {
+  const p = CITRUS[kind];
   return canvasTexture(256, 256, (ctx, w) => {
     const c = w / 2;
-    ctx.fillStyle = '#f07a12';
+    ctx.fillStyle = p.rind;
     ctx.beginPath(); ctx.arc(c, c, c, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#fff1d6';
+    ctx.fillStyle = p.pith;
     ctx.beginPath(); ctx.arc(c, c, c * 0.9, 0, Math.PI * 2); ctx.fill();
     const n = 10;
     for (let i = 0; i < n; i++) {
       const a0 = (i / n) * Math.PI * 2 + 0.05, a1 = ((i + 1) / n) * Math.PI * 2 - 0.05;
       const g = ctx.createRadialGradient(c, c, 4, c, c, c * 0.84);
-      g.addColorStop(0, '#ffc266');
-      g.addColorStop(1, '#ff8c1a');
+      g.addColorStop(0, p.inner);
+      g.addColorStop(1, p.outer);
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, c * 0.84, a0, a1); ctx.closePath(); ctx.fill();
     }
@@ -622,12 +628,14 @@ function sliceFaceTexture() {
 function fxDefs() {
   const glossy = () => new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.35, clearcoat: 0.5 });
   const matte = () => new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.75 });
-  const face = new THREE.MeshStandardMaterial({ map: sliceFaceTexture(), roughness: 0.4 });
+  const face = new THREE.MeshStandardMaterial({ map: sliceFaceTexture('orange'), roughness: 0.4 });
+  const lemonFace = new THREE.MeshStandardMaterial({ map: sliceFaceTexture('lemon'), roughness: 0.4 });
   return {
     bean: { geo: beanGeometry(), mat: beanMaterial(), size: 1.7 },
     leaf: { geo: leafGeometry(), mat: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.5, side: THREE.DoubleSide }), size: 1.2 },
     berry: { geo: berryGeometry(), mat: glossy(), size: 1 },
     slice: { geo: new THREE.CylinderGeometry(0.28, 0.28, 0.06, 40), mat: [new THREE.MeshStandardMaterial({ color: '#f07a12', roughness: 0.5 }), face, face], size: 1 },
+    lemon: { geo: new THREE.CylinderGeometry(0.26, 0.26, 0.05, 40), mat: [new THREE.MeshStandardMaterial({ color: '#f2d21b', roughness: 0.5 }), lemonFace, lemonFace], size: 1 },
     cube: { geo: new RoundedBoxGeometry(0.26, 0.26, 0.26, 3, 0.05), mat: glossy(), size: 1 },
     chip: { geo: chipGeometry(), mat: glossy(), size: 1.3 },
     bud: { geo: new THREE.CapsuleGeometry(0.045, 0.1, 4, 10), mat: matte(), size: 1.3 },

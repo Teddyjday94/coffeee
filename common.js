@@ -49,24 +49,16 @@ export const directionsURL = () =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${LOCATION.street}, ${LOCATION.city}`)}`;
 export const telURL = () => `tel:${LOCATION.phone.replace(/[^\d+]/g, '')}`;
 
-/* ---------- Bag images (rendered once per page, on demand) ---------- */
+/* ---------- Product images (pre-rendered by tools/render-images.mjs) ---------- */
 
-const bagCache = new Map();
-let bagQueue = Promise.resolve();
+export const bagImage = (name) => ({ front: `img/bags/${slug(name)}-front.webp`, angle: `img/bags/${slug(name)}-angle.webp` });
+export const drinkImage = (name) => ({ front: `img/drinks/${slug(name)}-front.webp`, angle: `img/drinks/${slug(name)}-angle.webp` });
 
-// Renders in the order `names` lists them; onEach fires as each bag is ready.
+// Kept async-shaped so callers don't care whether images are static or rendered.
 export function getBagImages(names = BEANS.map((b) => b.name), onEach) {
-  bagQueue = bagQueue.then(async () => {
-    const missing = names.map((n) => BEANS.find((b) => b.name === n)).filter((b) => b && !bagCache.has(b.name));
-    if (missing.length) {
-      const { renderBagImages } = await import('./bags.js');
-      await renderBagImages(missing, {
-        onEach: (name, urls) => { bagCache.set(name, urls); onEach?.(name, urls); },
-      });
-    }
-    return bagCache;
-  }).catch((err) => { console.warn('Bag renders failed', err); return bagCache; });
-  return bagQueue;
+  const map = new Map(names.map((n) => [n, bagImage(n)]));
+  map.forEach((urls, name) => onEach?.(name, urls));
+  return Promise.resolve(map);
 }
 
 /* ---------- Chrome: nav, footer, drawer, toast ---------- */

@@ -36,7 +36,7 @@ Shared modules:
 | `bags.js` | Models a stand-up coffee pouch and renders product images for each bean. |
 | `style.css` | All styles. |
 
-The drink photos on the home page (`img/drinks/*.webp`) are renders of the 3D drinks, made by `drinks.js`. If you change a drink in `content.js`, serve the site locally and run `node tools/render-drinks.mjs` to re-render them.
+The product shots (`img/drinks/*.webp` and `img/bags/*.webp`) are pre-rendered from the 3D models in `drinks.js` and `bags.js`, so visitors' phones just load images. If you add or change a drink or coffee in `content.js`, serve the site locally and run `node tools/render-images.mjs` to re-render them.
 
 Deep links work: `menu.html#mocha-midnight` opens that drink in the carousel, and `shop.html#gesha-reserve` opens that coffee's detail dialog.
 
