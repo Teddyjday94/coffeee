@@ -131,7 +131,7 @@ let drinksVisible = false;
 new IntersectionObserver(([e]) => { drinksVisible = e.isIntersecting; }, { threshold: 0.6 }).observe(drinksEl);
 if (!reduceMotion) {
   setInterval(() => {
-    const busy = spin.drag || document.body.classList.contains('drawer-open') || drinksEl.matches(':hover');
+    const busy = spin.drag || document.body.classList.contains('drawer-open') || drinksEl.matches(':hover') || product?.busy();
     if (drinksVisible && !busy && performance.now() - lastInteraction > 8000) setDrink(current + 1, { auto: true });
   }, 6000);
 }

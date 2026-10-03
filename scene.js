@@ -246,16 +246,13 @@ function foamGeometry() {
   return g;
 }
 
+const WHIP_SEGMENTS = 260, WHIP_RADIAL = 24, WHIP_R = 0.1;
+const whipTaper = (t) => 1 - 0.35 * t * t; // the bead thins toward the peak
+
 function whipGeometry() {
-  // Piped cream: a star-shaped profile extruded along a narrowing helix.
-  const star = new THREE.Shape();
-  const P = 8;
-  for (let i = 0; i <= P * 2; i++) {
-    const a = (i / (P * 2)) * Math.PI * 2;
-    const r = i % 2 ? 0.075 : 0.11;
-    const x = Math.cos(a) * r, y = Math.sin(a) * r;
-    if (i === 0) star.moveTo(x, y); else star.lineTo(x, y);
-  }
+  // Piped cream: a tube along a narrowing helix, with star-nozzle ridges
+  // pushed into it. TubeGeometry builds its triangles in order along the
+  // path, so the swirl can be "piped" by growing the draw range.
   const pts = [];
   const TURNS = 3.2, N = 160;
   for (let i = 0; i <= N; i++) {
@@ -265,10 +262,30 @@ function whipGeometry() {
     pts.push(new THREE.Vector3(Math.cos(a) * r, 0.08 + t * 0.5, Math.sin(a) * r));
   }
   const curve = new THREE.CatmullRomCurve3(pts);
-  const g = new THREE.ExtrudeGeometry(star, { steps: 320, bevelEnabled: false, extrudePath: curve });
+  const g = new THREE.TubeGeometry(curve, WHIP_SEGMENTS, WHIP_R, WHIP_RADIAL, false);
+  const p = g.attributes.position, n = g.attributes.normal;
+  const v = new THREE.Vector3(), nv = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    const seg = Math.floor(i / (WHIP_RADIAL + 1)), rad = i % (WHIP_RADIAL + 1);
+    v.fromBufferAttribute(p, i);
+    nv.fromBufferAttribute(n, i);
+    const center = v.clone().addScaledVector(nv, -WHIP_R);
+    const ridge = 1 + 0.28 * Math.cos((rad / WHIP_RADIAL) * Math.PI * 2 * 8); // 8-point star nozzle
+    v.copy(center).addScaledVector(nv, WHIP_R * ridge * whipTaper(seg / WHIP_SEGMENTS));
+    p.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
   g.userData.curve = curve;
   return g;
 }
+
+const easeOutBounce = (x) => {
+  const n = 7.5625, d = 2.75;
+  if (x < 1 / d) return n * x * x;
+  if (x < 2 / d) return n * (x -= 1.5 / d) * x + 0.75;
+  if (x < 2.5 / d) return n * (x -= 2.25 / d) * x + 0.9375;
+  return n * (x -= 2.625 / d) * x + 0.984375;
+};
 
 function drizzleOnFoam(foamTop, rTop) {
   // zig-zag lines of sauce across the foam dome
@@ -376,12 +393,25 @@ export function buildIcedCup() {
   const iceMat = new THREE.MeshPhysicalMaterial({
     color: '#f4fbff', roughness: 0.12, clearcoat: 1, transparent: true, opacity: 0.6, depthWrite: false,
   });
-  const iceGeo = new RoundedBoxGeometry(0.3, 0.3, 0.3, 3, 0.06);
-  const ice = [[0.18, 1.62, 0.15], [-0.22, 1.7, 0.05], [0.02, 1.56, -0.25], [-0.06, 1.84, 0.28], [0.28, 1.78, -0.12]].map((p) => {
+  const iceGeo = new RoundedBoxGeometry(0.28, 0.28, 0.28, 3, 0.06);
+  // Each cube has a resting spot in a little pile on the bottom of the empty
+  // cup, and a spot where it floats once the cup is full.
+  const PILE = [
+    [-0.16, 0.17, -0.12], [0.16, 0.17, -0.14], [-0.1, 0.17, 0.17], [0.17, 0.17, 0.14],
+    [0.02, 0.43, -0.02], [-0.19, 0.45, 0.04], [0.19, 0.46, 0.06], [0.0, 0.44, 0.22],
+  ];
+  const ice = PILE.map((rest, i) => {
     const m = new THREE.Mesh(iceGeo, iceMat);
-    m.position.set(...p);
-    m.rotation.set(rand(0, 3), rand(0, 3), rand(0, 3));
-    m.userData.baseY = p[1];
+    const a = (i / PILE.length) * Math.PI * 2 + rand(-0.2, 0.2);
+    const r = i % 2 ? 0.38 : 0.18;
+    m.userData = {
+      rest: new THREE.Vector3(...rest),
+      float: new THREE.Vector3(Math.cos(a) * r, 0.09 - (i % 3) * 0.09, Math.sin(a) * r), // y is relative to the surface; poke up through it
+      rot: new THREE.Euler(rand(0, 3), rand(0, 3), rand(0, 3)),
+      spin: new THREE.Vector3(rand(-6, 6), rand(-6, 6), rand(-6, 6)),
+      dropAt: i * 0.075,
+    };
+    m.rotation.copy(m.userData.rot);
     m.renderOrder = 1;
     g.add(m);
     return m;
@@ -424,6 +454,7 @@ export function buildIcedCup() {
   const foamGeo = foamGeometry();
   const foam = new THREE.Mesh(foamGeo, creamMat);
   const whipGeo = whipGeometry();
+  const whipCurve = whipGeo.userData.curve;
   const whip = new THREE.Group();
   whip.add(new THREE.Mesh(whipGeo, creamMat));
   const whipBase = new THREE.Mesh(foamGeo, creamMat);
@@ -432,6 +463,20 @@ export function buildIcedCup() {
   const tip = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.16, 16), creamMat);
   tip.position.y = 0.66;
   whip.add(tip);
+  // The nozzle bead: rounds off the growing end of the swirl while it's piped.
+  const bead = new THREE.Mesh(new THREE.SphereGeometry(WHIP_R * 1.05, 20, 14), creamMat);
+  whip.add(bead);
+
+  function setWhip(p) {
+    const segs = Math.round(p * WHIP_SEGMENTS);
+    whipGeo.setDrawRange(0, segs * WHIP_RADIAL * 6);
+    bead.visible = segs > 0;
+    if (bead.visible) {
+      const k = segs / WHIP_SEGMENTS;
+      bead.position.copy(whipCurve.getPointAt(k));
+      bead.scale.setScalar(whipTaper(k));
+    }
+  }
   const drizzleFoam = new THREE.Mesh(drizzleOnFoam(foamGeo.userData.top, foamGeo.userData.rTop * 0.92), sauceMat);
   const drizzleWhip = new THREE.Mesh(drizzleOnWhip(whipGeo.userData.curve), sauceMat);
   topping.add(foam, whip, drizzleFoam, drizzleWhip);
@@ -467,13 +512,16 @@ export function buildIcedCup() {
 
   /*
    * Pour timeline (seconds from the start of a drink change):
-   *   0.00–0.35  drain: old drink empties, topping shrinks, straw lifts out
-   *   0.35–1.95  pour: the bottom layer pours in first, then the top layer,
-   *              which blooms down into it; ice floats on the rising surface
-   *   1.95–2.15  the stream's tail falls into the cup
-   *   1.95–2.65  topping grows back, straw drops in
+   *   0.00–0.35  drain: old drink empties, old ice clears, topping shrinks,
+   *              straw lifts out
+   *   0.40–1.45  ice: fresh cubes tumble in one by one and bounce into a pile
+   *   1.30–2.90  pour: the bottom layer pours in first, then the top layer,
+   *              which blooms down into it; the ice lifts off and floats
+   *   2.90–3.10  the stream's tail falls into the cup
+   *   2.95–4.60  straw drops in; foam pops on, or whipped cream is piped
+   *              in a swirl, then the drizzle lands
    */
-  const T = { drainEnd: 0.35, pourEnd: 1.95, tailEnd: 2.15, strawIn: 2.0, end: 2.7 };
+  const T = { drainEnd: 0.35, iceStart: 0.4, iceFall: 0.55, pourStart: 1.3, pourEnd: 2.9, tailEnd: 3.1, strawIn: 2.95, toppingStart: 2.9, end: 4.6 };
   const pour = { t: -1, level: 1, topping: null, wait: 0 };
   const surfaceY = () => BASE + (FILL - BASE) * pour.level;
   let shownSplit = 0.5;
@@ -499,6 +547,7 @@ export function buildIcedCup() {
       paint();
       applyTopping(drink.topping);
       setTopping(1);
+      finishWhip();
       straw.position.y = STRAW_Y;
       straw.visible = true;
       layout(0);
@@ -526,37 +575,86 @@ export function buildIcedCup() {
     applyTopping(pour.topping);
   }
 
-  // Place everything that depends on the liquid level.
-  function layout(time) {
+  function finishWhip() {
+    setWhip(1);
+    tip.scale.setScalar(1);
+    whipBase.scale.set(1, 0.7, 1);
+    drizzleWhip.visible = whip.visible && !!pour.topping?.drizzle;
+  }
+
+  // Place everything that depends on the liquid level and the ice drop.
+  // t is the time into the current drink change (Infinity when idle).
+  function layout(time, t = Infinity) {
     liquid.visible = pour.level > 0.04;
     liquid.scale.y = Math.max(pour.level, 0.01);
-    const drop = (FILL - BASE) * (1 - pour.level);
+    const surface = surfaceY();
     ice.forEach((m, i) => {
-      // Floats on the surface; settles on the bottom when the cup is empty.
-      m.position.y = Math.max(0.16 + i * 0.03, m.userData.baseY - drop) + Math.sin(time * 1.3 + i * 1.7) * 0.02 * pour.level;
+      const u = m.userData;
+      // Old ice clears out while the cup drains.
+      if (t < T.drainEnd) {
+        m.visible = true;
+        m.scale.setScalar(Math.max(1 - t / T.drainEnd, 1e-3));
+        return;
+      }
+      m.scale.setScalar(1);
+      // New ice tumbles in from above and bounces into a pile.
+      const fall = (t - T.iceStart - u.dropAt) / T.iceFall;
+      m.visible = fall >= 0;
+      if (fall < 0) return;
+      if (fall < 1) {
+        const k = easeOutBounce(fall);
+        m.position.set(u.rest.x, lerp(CUP_H + 2.6, u.rest.y, k), u.rest.z);
+        const tumble = (1 - Math.min(1, fall * 1.4)) * 1.2;
+        m.rotation.set(u.rot.x + u.spin.x * tumble, u.rot.y + u.spin.y * tumble, u.rot.z + u.spin.z * tumble);
+        return;
+      }
+      // Resting in the pile until the rising liquid lifts it to float.
+      m.rotation.copy(u.rot);
+      const floatY = surface + u.float.y + Math.sin(time * 1.3 + i * 1.7) * 0.02 * pour.level;
+      const lift = clamp((floatY - u.rest.y) / 0.7, 0, 1);
+      m.position.set(
+        lerp(u.rest.x, u.float.x, lift),
+        Math.max(u.rest.y, floatY),
+        lerp(u.rest.z, u.float.z, lift),
+      );
     });
   }
 
   function update(dt, time) {
     if (pour.t < 0 || pour.wait > 0) {
       pour.wait -= dt;
-      layout(time);
+      layout(time, pour.t < 0 ? Infinity : pour.t); // a fresh cup stays empty while it waits
       return;
     }
     const prev = pour.t;
     pour.t += dt;
     const t = pour.t;
-    const pourK = clamp((t - T.drainEnd) / (T.pourEnd - T.drainEnd), 0, 1);
+    const pourK = clamp((t - T.pourStart) / (T.pourEnd - T.pourStart), 0, 1);
 
     // Liquid level
     if (t < T.drainEnd) pour.level = 1 - ease.inOut(t / T.drainEnd);
+    else if (t < T.pourStart) pour.level = 0;
     else pour.level = Math.min(1, ease.out(pourK) * 0.15 + pourK * 0.85);
-    if (prev < T.drainEnd && t >= T.drainEnd) switchColors();
+    if (prev < T.drainEnd && t >= T.drainEnd) {
+      switchColors();
+      setWhip(0);
+      tip.scale.setScalar(1e-3);
+      drizzleWhip.visible = false;
+    }
 
     // Topping out, then back in once the pour is done
+    const tw = t - T.toppingStart;
     if (t < T.drainEnd) setTopping(1 - clamp(t / 0.22, 0, 1));
-    else if (t < T.pourEnd) setTopping(0);
-    else setTopping(ease.outBack(clamp((t - T.pourEnd) / 0.7, 0, 1)));
+    else if (tw < 0) setTopping(0);
+    else if (pour.topping?.type === 'whip') {
+      // Whipped cream is piped: a soft base, then the swirl winds up to a peak.
+      setTopping(1);
+      const b = ease.outBack(clamp(tw / 0.3, 0, 1));
+      whipBase.scale.set(Math.max(b, 1e-3), Math.max(0.7 * b, 1e-3), Math.max(b, 1e-3));
+      setWhip(ease.inOut(clamp((tw - 0.15) / 1.15, 0, 1)));
+      tip.scale.setScalar(Math.max(ease.outBack(clamp((tw - 1.25) / 0.3, 0, 1)), 1e-3));
+      drizzleWhip.visible = !!pour.topping.drizzle && tw > 1.4;
+    } else setTopping(ease.outBack(clamp(tw / 0.7, 0, 1)));
 
     // Straw lifts out, then drops back in
     if (t < T.drainEnd) straw.position.y = STRAW_Y + ease.inOut(t / T.drainEnd) * 3;
@@ -567,7 +665,7 @@ export function buildIcedCup() {
     // Two-stage pour: bottom layer first, then the top layer blooms down into it
     const topStart = 1 - tgt.split * 0.85; // when the top layer starts pouring
     const pouringTop = pourK >= topStart;
-    if (t >= T.drainEnd) {
+    if (t >= T.pourStart) {
       const bloom = clamp((pourK - topStart) / (1 - topStart + 0.25), 0, 1);
       const split = lerp(1, tgt.split, ease.out(bloom));
       if (Math.abs(split - shownSplit) > 0.002) {
@@ -578,14 +676,14 @@ export function buildIcedCup() {
 
     // Stream
     const surface = surfaceY();
-    stream.visible = t >= T.drainEnd && t < T.tailEnd;
+    stream.visible = t >= T.pourStart && t < T.tailEnd;
     if (stream.visible) {
       const tail = clamp((t - T.pourEnd) / (T.tailEnd - T.pourEnd), 0, 1);
       const top = lerp(STREAM_TOP, surface, ease.inOut(tail));
       stream.position.y = top;
       stream.scale.y = Math.max(top - surface, 0.001);
       const wobble = 1 + 0.08 * Math.sin(time * 38) + 0.05 * Math.sin(time * 23 + 1);
-      const thin = t > T.pourEnd ? 1 - tail * 0.6 : Math.min(1, (t - T.drainEnd) / 0.12);
+      const thin = t > T.pourEnd ? 1 - tail * 0.6 : Math.min(1, (t - T.pourStart) / 0.12);
       stream.scale.x = stream.scale.z = wobble * thin;
       streamMat.color.copy(pouringTop ? cur.top : cur.bottom);
     }
@@ -593,7 +691,7 @@ export function buildIcedCup() {
     // Ripples spreading from where the stream lands
     ripples.forEach((r, i) => {
       const phase = ((t * 2.6 + i / ripples.length) % 1);
-      r.visible = t >= T.drainEnd + 0.1 && t < T.pourEnd && pour.level > 0.05;
+      r.visible = t >= T.pourStart + 0.1 && t < T.pourEnd && pour.level > 0.05;
       if (!r.visible) return;
       const rad = 0.08 + phase * 0.45;
       r.position.set(stream.position.x, surface + 0.01, stream.position.z);
@@ -601,11 +699,14 @@ export function buildIcedCup() {
       r.material.opacity = 0.45 * (1 - phase);
     });
 
-    layout(time);
-    if (t >= T.end) pour.t = -1;
+    layout(time, t);
+    if (t >= T.end) {
+      pour.t = -1;
+      if (pour.topping?.type === 'whip') finishWhip();
+    }
   }
 
-  return { group: g, setDrink, update };
+  return { group: g, setDrink, update, busy: () => pour.t >= 0 };
 }
 
 /**
@@ -641,6 +742,7 @@ export function createProduct() {
   return {
     group, spinner, hot, iced, shadow,
     setDrink: icedCup.setDrink,
+    busy: icedCup.busy, // true while a drink is draining, pouring or being topped
     update(dt, time) {
       if (iced.visible) icedCup.update(dt, time);
       if (hot.visible) hotCup.userData.update(dt, time);
