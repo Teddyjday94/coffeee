@@ -99,7 +99,7 @@ function layout() {
   const vw = vh * camera.aspect;
   const narrow = innerWidth < 760;
   const fit = Math.min(1, vw / 9);
-  return { vh, ...(narrow ? { x: 0, y: -vh * 0.28, s: 0.72 } : { x: vw * 0.17, y: -0.2, s: 1.4 * Math.max(fit, 0.75) }) };
+  return { vh, ...(narrow ? { x: 0, y: -vh * 0.25, s: 0.72 } : { x: vw * 0.17, y: -0.2, s: 1.4 * Math.max(fit, 0.75) }) };
 }
 
 const clock = new THREE.Clock();

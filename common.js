@@ -80,17 +80,23 @@ function navHTML(page) {
       <div class="nav-actions">
         <nav class="nav-links" aria-label="Secondary">${link(PAGES[2])}</nav>
         <button type="button" class="bag-btn" id="bag-btn" aria-haspopup="dialog">Bag (<span id="bag-count">0</span>)</button>
-        <button type="button" class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="mobile-nav">Menu</button>
       </div>
     </header>
-    <div class="mobile-nav" id="mobile-nav" inert>
-      <nav aria-label="Mobile">
-        <a href="index.html"${page === 'home' ? ' aria-current="page"' : ''}>Home</a>
-        ${PAGES.map(link).join('')}
-      </nav>
-      <p class="mobile-status" data-open-status></p>
-    </div>`;
+    <nav class="tabbar" aria-label="Pages">
+      ${[{ id: 'home', href: 'index.html', label: 'Home' }, ...PAGES].map((p) => `
+        <a href="${p.href}"${p.id === page ? ' aria-current="page"' : ''}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[p.id]}</svg>
+          <span>${p.label}</span>
+        </a>`).join('')}
+    </nav>`;
 }
+
+const TAB_ICONS = {
+  home: '<path d="M4 11 L12 4 L20 11 V20 H14.5 V14.5 H9.5 V20 H4 Z"/>',
+  menu: '<path d="M5 8 H17 V13 C17 16.5 14.5 19 11 19 C7.5 19 5 16.5 5 13 Z"/><path d="M17 10 H18.5 C20 10 20.5 11.2 20.5 12 C20.5 13.5 19 14.5 17 14"/><path d="M9 4.5 V6 M12.5 4.5 V6"/>',
+  shop: '<path d="M6 8 H18 L17 20 H7 Z"/><path d="M9 8 V6.5 C9 4.8 10.3 3.5 12 3.5 C13.7 3.5 15 4.8 15 6.5 V8"/>',
+  visit: '<path d="M12 21 C12 21 5.5 14.8 5.5 10 C5.5 6.4 8.4 3.5 12 3.5 C15.6 3.5 18.5 6.4 18.5 10 C18.5 14.8 12 21 12 21 Z"/><circle cx="12" cy="10" r="2.4"/>',
+};
 
 function footerHTML() {
   return `
@@ -180,19 +186,6 @@ export function initChrome(page) {
   document.body.insertAdjacentHTML('afterbegin', navHTML(page));
   $('main').insertAdjacentHTML('afterend', footerHTML());
   document.body.insertAdjacentHTML('beforeend', drawerHTML);
-
-  // Mobile menu
-  const menuBtn = $('#menu-btn');
-  const mobileNav = $('#mobile-nav');
-  const setMenu = (open) => {
-    menuBtn.setAttribute('aria-expanded', String(open));
-    menuBtn.textContent = open ? 'Close' : 'Menu';
-    mobileNav.classList.toggle('open', open);
-    mobileNav.inert = !open;
-    document.body.classList.toggle('menu-open', open);
-  };
-  menuBtn.addEventListener('click', () => setMenu(menuBtn.getAttribute('aria-expanded') !== 'true'));
-  addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 
   // Bag, with bag-image thumbnails for any beans in it
   const syncThumbs = (items) => {
