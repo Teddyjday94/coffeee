@@ -89,6 +89,7 @@ function setDrink(i, { auto = false } = {}) {
   drinksEl.style.setProperty('--drink-bg', d.bg);
   drinksEl.style.setProperty('--drink-ink', d.ink);
   $('#drink-name').innerHTML = renderName(d.name);
+  $('#drink-name').style.setProperty('--len', d.name.length); // long names shrink to fit
   $('#drink-index').textContent = String(current + 1).padStart(2, '0');
   $('#drink-desc').textContent = d.desc;
   $('#drink-price').textContent = money(drinkPrice());
@@ -98,6 +99,7 @@ function setDrink(i, { auto = false } = {}) {
   void disc.offsetWidth;
   disc.classList.add('pulse');
   if (!auto) history.replaceState(null, '', `#${slug(d.name)}`);
+  if (product) measureSlot(); // the name can change height between one and two lines
   product?.setDrink(d);
   if (fxOn) fx.show(d);
   if (!reduceMotion) spinKick += dir * 0.25;
@@ -145,20 +147,37 @@ product.hot.visible = false;
 product.setDrink(DRINKS[current], true);
 scene.add(fx.group, product.group);
 
+// On phones the drink name sits above the cup and the controls below it, so
+// fit the cup into the gap between them (works for short 9:16 screens too).
+let slot = null;
+function measureSlot() {
+  if (innerWidth >= 760) { slot = null; return; }
+  const top = $('#drink-name').getBoundingClientRect().bottom + scrollY - drinksEl.offsetTop;
+  const bottom = $('.drinks-bottom').getBoundingClientRect().top + scrollY - drinksEl.offsetTop;
+  slot = { center: (top + bottom) / 2, size: Math.max(bottom - top, 120) };
+}
+
 function resize() {
   renderer.setSize(innerWidth, innerHeight, false);
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
+  measureSlot();
 }
 resize();
 addEventListener('resize', resize);
 
+// The iced cup plus a little straw spans about 2.5 units, centred 0.2 above its
+// origin; the rest of the straw is allowed to poke up into the drink name.
+const CUP_SPAN = 2.5, CUP_CENTER = 0.2;
 function layout() {
   const vh = 2 * camera.position.length() * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   const vw = vh * camera.aspect;
-  const narrow = innerWidth < 760;
+  if (slot) {
+    const s = Math.min(0.85, (slot.size * 0.95 / innerHeight) * vh / CUP_SPAN);
+    return { vh, x: 0, y: (0.5 - slot.center / innerHeight) * vh - CUP_CENTER * s, s };
+  }
   const fit = Math.min(1, vw / 9);
-  return { vh, ...(narrow ? { x: 0, y: -vh * (0.06 + 32 / innerHeight), s: 0.72 } : { x: 0, y: -0.35, s: 1.18 * Math.max(fit, 0.75) }) };
+  return { vh, x: 0, y: -0.35, s: 1.18 * Math.max(fit, 0.75) };
 }
 
 const clock = new THREE.Clock();

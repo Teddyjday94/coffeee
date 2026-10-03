@@ -262,7 +262,7 @@ body.ready .hero h1 .line > span { transform: none; }
   text-align: center;
   font-family: var(--display);
   font-weight: 400;
-  font-size: clamp(72px, 13.5vw, 270px);
+  font-size: clamp(56px, min(13.5vw, 190vw / var(--len, 13)), 270px);
   line-height: 0.86;
   text-transform: uppercase;
   white-space: nowrap;
@@ -1086,18 +1086,18 @@ button.card-visual { width: 100%; padding: 0; border: 0; cursor: zoom-in; }
   .nav-visit { display: none; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .footer-grid > div:first-child { grid-column: 1 / -1; }
-  .hero { grid-template-columns: 1fr; align-items: start; padding-top: 104px; padding-bottom: 52vh; }
+  .hero { grid-template-columns: 1fr; align-items: start; padding-top: 104px; padding-bottom: max(40vh, 220px); }
   .hero-side { display: none; }
   .lede { margin: 18px 0 24px; }
   .drinks-top { top: 92px; }
   .drinks-hint { display: none; }
   .drinks-bottom { flex-direction: column; align-items: stretch; bottom: 24px; }
   .drink-controls { justify-content: space-between; }
-  .drink-name { top: 30%; white-space: normal; font-size: clamp(64px, 22vw, 140px); }
-  .drink-disc { top: 56%; width: 78vw; }
-  .drink-name .word { display: block; }
+  .drink-name { top: 28%; padding: 0 12px; white-space: normal; font-size: clamp(48px, 16vw, 110px); }
+  .drink-disc { top: 54%; width: 72vw; }
   .beans { padding: 80px var(--gutter); }
-  .grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .card, .buy select { min-width: 0; }
   .card { padding: 10px; border-radius: 18px; }
   .notes { display: none; }
   .buy { flex-direction: column; }
@@ -1127,6 +1127,16 @@ button.card-visual { width: 100%; padding: 0; border: 0; cursor: zoom-in; }
   .hours-week, .amenities, .getting-here, .faq, .contact { padding: 80px var(--gutter); }
   .visit { padding: 120px var(--gutter) 80px; }
   .shop-toolbar { align-items: stretch; flex-direction: column; }
+}
+
+/* Short phones (and 9:16 screen recordings): tighten the hero so the cup has room */
+@media (max-width: 760px) and (max-height: 720px) {
+  .hero { padding-top: 88px; }
+  .hero-copy .eyebrow { margin-bottom: 12px; }
+  .hero h1 { font-size: 50px; }
+  .lede { margin: 12px 0 16px; font-size: 14px; line-height: 1.5; }
+  .hero .btn { padding: 11px 20px; }
+  .drinks-top { top: 84px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

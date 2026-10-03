@@ -86,20 +86,35 @@ product.iced.visible = false;
 scene.add(beans.group, product.group);
 const spin = createSpin([$('.hero')]);
 
+// On phones, fit the cup into the space between the hero buttons and the tab bar.
+let slot = null;
+function measureSlot() {
+  if (innerWidth >= 760) { slot = null; return; }
+  const top = $('.hero .actions').getBoundingClientRect().bottom + scrollY + 12;
+  const bottom = ($('.tabbar')?.getBoundingClientRect().top ?? innerHeight) - 8;
+  slot = { center: (top + bottom) / 2, size: Math.max(bottom - top, 140) };
+}
+
 function resize() {
   renderer.setSize(innerWidth, innerHeight, false);
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
+  measureSlot();
 }
 resize();
 addEventListener('resize', resize);
 
+// The to-go cup, lid included, spans about 2.3 units, centred 0.09 above its origin.
+const CUP_SPAN = 2.3, CUP_CENTER = 0.09;
 function layout() {
   const vh = 2 * camera.position.length() * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   const vw = vh * camera.aspect;
-  const narrow = innerWidth < 760;
+  if (slot) {
+    const s = Math.max(0.42, Math.min(0.8, (slot.size * 0.9 / innerHeight) * vh / CUP_SPAN));
+    return { vh, x: 0, y: (0.5 - slot.center / innerHeight) * vh - CUP_CENTER * s, s };
+  }
   const fit = Math.min(1, vw / 9);
-  return { vh, ...(narrow ? { x: 0, y: -vh * 0.25, s: 0.72 } : { x: vw * 0.17, y: -0.2, s: 1.4 * Math.max(fit, 0.75) }) };
+  return { vh, x: vw * 0.17, y: -0.2, s: 1.4 * Math.max(fit, 0.75) };
 }
 
 const clock = new THREE.Clock();
