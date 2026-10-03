@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ember &amp; Oak Coffee</title>
+  <meta name="description" content="Small-batch coffee, signature iced drinks and fresh-roasted beans. Order ahead for pickup or come find us.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,600;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="loader" aria-hidden="true"><span>Ember &amp; Oak</span><i></i></div>
+
+  <!-- The 3D cup lives on this fixed, transparent canvas. Giant type sits
+       behind it (z-index 0) and UI sits in front of it (z-index 2). -->
+  <canvas id="stage" aria-hidden="true"></canvas>
+
+  <header class="nav">
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#drinks">Drinks</a>
+      <a href="#story">Story</a>
+      <a href="#beans">Beans</a>
+    </nav>
+    <a class="logo" href="#top" aria-label="Ember &amp; Oak home"><span>Ember</span><span>&amp; Oak</span></a>
+    <div class="nav-actions">
+      <a href="#visit" class="nav-visit">Visit us ↗</a>
+      <button type="button" class="bag-btn" id="bag-btn" aria-haspopup="dialog">Bag (<span id="bag-count">0</span>)</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="top">
+      <div class="hero-word" aria-hidden="true">ROASTED</div>
+      <div class="hero-copy">
+        <p class="eyebrow">Small-batch roasters · Est. 2019</p>
+        <h1>
+          <span class="line"><span>Coffee</span></span>
+          <span class="line"><span>worth the</span></span>
+          <span class="line accent"><span>detour.</span></span>
+        </h1>
+        <p class="lede">Single-origin beans roasted every Tuesday, pulled by people who care a little too much. Pull up a stool.</p>
+        <div class="actions">
+          <a class="btn" href="#drinks">Order ahead</a>
+          <a class="btn ghost" href="#beans">Shop beans</a>
+        </div>
+      </div>
+      <ul class="hero-side" data-reveal>
+        <li><b>01</b> Roasted weekly</li>
+        <li><b>02</b> Direct trade</li>
+        <li><b>03</b> Compostable cups</li>
+      </ul>
+      <p class="scroll-cue" aria-hidden="true">Scroll <i></i></p>
+    </section>
+
+    <section class="drinks" id="drinks" aria-roledescription="carousel" aria-label="Signature drinks">
+      <div class="drinks-top">
+        <p class="eyebrow">Signature drinks · Iced &amp; over</p>
+        <p class="eyebrow drinks-hint">Drag the cup to spin it</p>
+      </div>
+      <div class="drink-disc" aria-hidden="true"></div>
+      <h2 class="drink-name" id="drink-name" aria-live="polite"></h2>
+      <div class="drinks-bottom">
+        <div class="drink-info">
+          <p class="drink-count"><span id="drink-index">01</span> / <span id="drink-total">09</span></p>
+          <p class="drink-desc" id="drink-desc"></p>
+          <div class="drink-buy">
+            <p class="drink-price" id="drink-price"></p>
+            <div class="sizes" role="radiogroup" aria-label="Size">
+              <button type="button" role="radio" aria-checked="true" data-size="0">12 oz</button>
+              <button type="button" role="radio" aria-checked="false" data-size="1">16 oz</button>
+            </div>
+            <button type="button" class="add-drink" id="drink-add">Add to order</button>
+          </div>
+        </div>
+        <div class="drink-controls">
+          <button type="button" class="round" id="drink-prev" aria-label="Previous drink">←</button>
+          <div class="dots" id="drink-dots" role="tablist" aria-label="Choose a drink"></div>
+          <button type="button" class="round solid" id="drink-next" aria-label="Next drink">→</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="story" id="story">
+      <p class="eyebrow">Our story</p>
+      <p class="story-text" id="story-text"></p>
+      <ul class="stats" id="stats"></ul>
+      <ol class="process" id="process"></ol>
+    </section>
+
+    <section class="beans" id="beans">
+      <div class="beans-head">
+        <div>
+          <p class="eyebrow">Retail shelf</p>
+          <h2 data-reveal>Beans worth the trip</h2>
+        </div>
+        <div class="chips" role="group" aria-label="Filter beans">
+          <button type="button" class="chip active" data-filter="all">All</button>
+          <button type="button" class="chip" data-filter="single">Single origin</button>
+          <button type="button" class="chip" data-filter="blend">Blends</button>
+          <button type="button" class="chip" data-filter="decaf">Decaf</button>
+        </div>
+      </div>
+      <ul class="grid" id="bean-grid"></ul>
+    </section>
+
+    <section class="visit" id="visit">
+      <div class="visit-grid">
+        <div data-reveal>
+          <p class="eyebrow">Visit us</p>
+          <h2>Come on in</h2>
+          <p class="open-status" id="open-status"></p>
+          <p class="address" id="address"></p>
+          <div class="actions">
+            <a class="btn light" id="directions" target="_blank" rel="noopener">Get directions ↗</a>
+            <a class="btn ghost-light" id="call">Call us</a>
+          </div>
+          <dl class="hours" id="hours"></dl>
+        </div>
+        <figure class="map" data-reveal aria-label="Map showing the shop's location">
+          <svg viewBox="0 0 480 400" role="img" aria-hidden="true">
+            <rect width="480" height="400" fill="#2a1711"/>
+            <path d="M-20 300 C 90 260, 150 340, 260 300 S 420 230, 500 260 L 500 330 C 420 300, 330 380, 250 360 S 80 330, -20 370 Z" fill="#3b5560" opacity=".55"/>
+            <rect x="300" y="-14" width="160" height="88" rx="14" fill="#3d4a2c" opacity=".7"/>
+            <g stroke="#5a3a2c" stroke-width="14" stroke-linecap="round">
+              <path d="M-10 90 H490"/><path d="M-10 200 H490"/><path d="M80 -10 V410"/><path d="M230 -10 V410"/><path d="M380 -10 V410"/>
+            </g>
+            <g stroke="#4a2f23" stroke-width="6" stroke-linecap="round">
+              <path d="M-10 145 H490"/><path d="M155 -10 V280"/><path d="M305 160 V280"/><path d="M-10 250 H230"/>
+            </g>
+            <g fill="#3a2219">
+              <rect x="100" y="105" width="40" height="30" rx="4"/><rect x="170" y="105" width="45" height="30" rx="4"/>
+              <rect x="100" y="160" width="40" height="28" rx="4"/><rect x="245" y="105" width="45" height="30" rx="4"/>
+              <rect x="245" y="160" width="45" height="28" rx="4"/><rect x="320" y="165" width="45" height="25" rx="4"/>
+              <rect x="20" y="105" width="45" height="30" rx="4"/><rect x="20" y="160" width="45" height="28" rx="4"/>
+              <rect x="170" y="215" width="45" height="28" rx="4"/><rect x="100" y="215" width="40" height="28" rx="4"/>
+            </g>
+            <text x="380" y="40" fill="#8fa070" font-family="Inter, sans-serif" font-size="12" font-weight="600" text-anchor="middle" letter-spacing="2">PARK</text>
+            <text transform="translate(234 70) rotate(90)" fill="#9c7a66" font-family="Inter, sans-serif" font-size="10" font-weight="600" letter-spacing="2" dominant-baseline="middle">MAIN ST</text>
+            <text x="300" y="94" fill="#9c7a66" font-family="Inter, sans-serif" font-size="10" font-weight="600" letter-spacing="2" dominant-baseline="middle">OAK AVE</text>
+            <g class="map-pin" transform="translate(230 200)">
+              <circle r="34" fill="#e9a06b" opacity=".18" class="pulse"/>
+              <circle r="18" fill="#e9a06b" opacity=".3"/>
+              <path d="M0 6 C -14 -10, -16 -18, -16 -24 A16 16 0 1 1 16 -24 C 16 -18, 14 -10, 0 6 Z" fill="#f4e3cf" transform="translate(0 -10)"/>
+              <circle cy="-34" r="6" fill="#7d2418"/>
+            </g>
+          </svg>
+          <figcaption>Ember &amp; Oak · <span id="map-street"></span></figcaption>
+        </figure>
+      </div>
+      <p class="wordmark" aria-hidden="true">Ember &amp; Oak</p>
+      <footer class="footer">
+        <span>© <span id="year"></span> Ember &amp; Oak Coffee Roasters</span>
+        <nav aria-label="Social"><a href="#">Instagram</a><a href="#">TikTok</a><a href="#">Newsletter</a></nav>
+      </footer>
+    </section>
+  </main>
+
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-hidden="true">
+    <header class="drawer-head">
+      <h2 id="drawer-title">Your bag</h2>
+      <button type="button" class="icon-btn" id="drawer-close" aria-label="Close bag">×</button>
+    </header>
+    <div class="drawer-body" id="drawer-body"></div>
+    <footer class="drawer-foot" id="drawer-foot"></footer>
+  </aside>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <noscript><p class="noscript">The 3D parts of this site need JavaScript and WebGL.</p></noscript>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
