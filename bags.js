@@ -4,7 +4,8 @@
 // thrown away afterwards, instead of a live 3D canvas per card.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { canvasTexture } from './scene.js';
+import { canvasTexture, shadowTexture } from './scene.js';
+import { bagArt } from './product-art.mjs';
 
 const W = 1.0, H = 1.45, D = 0.42;
 const { smoothstep } = THREE.MathUtils;
@@ -104,8 +105,78 @@ function wrapLines(ctx, text, maxW) {
   return lines;
 }
 
+function drawPattern(ctx, art, x, y, w, h, ink) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 18);
+  ctx.clip();
+  ctx.translate(x, y);
+  ctx.strokeStyle = ink;
+  ctx.fillStyle = ink;
+  ctx.lineWidth = 4;
+  ctx.globalAlpha = 0.12;
+
+  if (art.pattern === 'orbit') {
+    for (let r = 90; r < 520; r += 74) {
+      ctx.beginPath();
+      ctx.ellipse(w * 0.78, h * 0.18, r, r * 0.58, -0.35, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  } else if (art.pattern === 'night') {
+    for (let i = 0; i < 54; i++) {
+      const px = (i * 137) % w, py = (i * 83) % h;
+      ctx.beginPath();
+      ctx.arc(px, py, i % 7 === 0 ? 5 : 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.lineWidth = 18;
+    ctx.beginPath();
+    ctx.arc(w * 0.82, h * 0.18, 150, 0.45, Math.PI * 1.65);
+    ctx.stroke();
+  } else if (art.pattern === 'botanical') {
+    for (let branch = 0; branch < 5; branch++) {
+      const bx = 70 + branch * 175;
+      ctx.beginPath();
+      ctx.moveTo(bx, h + 30);
+      ctx.bezierCurveTo(bx - 80, h * 0.66, bx + 120, h * 0.42, bx + 20, -40);
+      ctx.stroke();
+      for (let n = 0; n < 7; n++) {
+        const py = h - 80 - n * 105;
+        ctx.beginPath();
+        ctx.ellipse(bx + (n % 2 ? 38 : -38), py, 42, 16, n % 2 ? -0.55 : 0.55, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+  } else if (art.pattern === 'mosaic') {
+    for (let i = -h; i < w + h; i += 92) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i - h, h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + h, h); ctx.stroke();
+    }
+  } else if (art.pattern === 'sunburst') {
+    const cx = w * 0.78, cy = h * 0.2;
+    for (let i = 0; i < 32; i++) {
+      const a = (i / 32) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * 50, cy + Math.sin(a) * 50);
+      ctx.lineTo(cx + Math.cos(a) * 410, cy + Math.sin(a) * 410);
+      ctx.stroke();
+    }
+  } else {
+    for (let row = -30; row < h + 100; row += 82) {
+      ctx.beginPath();
+      for (let px = -40; px <= w + 40; px += 20) {
+        const py = row + Math.sin(px * 0.018 + row * 0.01) * 28;
+        if (px === -40) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
 function frontTexture(bean) {
   const kind = bean.paper;
+  const art = bagArt(bean);
   return canvasTexture(1024, 1485, (ctx, w, h) => {
     paper(ctx, w, h, kind);
     const ink = PAPER[kind].ink;
@@ -113,87 +184,111 @@ function frontTexture(bean) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // brand mark
-    ctx.fillStyle = ink;
-    ctx.font = '400 66px Anton, Impact, sans-serif';
-    ctx.letterSpacing = '6px';
-    ctx.fillText('EMBER & OAK', cx, 205);
-    ctx.font = '600 22px Inter, sans-serif';
-    ctx.letterSpacing = '9px';
-    ctx.fillText('COFFEE ROASTERS · EST. 2019', cx, 262);
+    // A vertical color key makes each origin recognizable from across a shelf.
+    ctx.fillStyle = art.accent;
+    ctx.fillRect(54, 118, 16, 1248);
 
-    // label sticker
-    const lx = 120, ly = 470, lw = w - 240, lh = 760;
-    const labelBg = PAPER[kind].light ? `hsl(${bean.hue}, 50%, 40%)` : `hsl(${bean.hue}, 42%, 32%)`;
-    ctx.shadowColor = 'rgba(0,0,0,0.18)';
-    ctx.shadowBlur = 6;
-    ctx.shadowOffsetY = 2;
-    ctx.fillStyle = labelBg;
+    // Brand crest and wordmark.
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.roundRect(lx, ly, lw, lh, 14);
+    ctx.arc(cx, 152, 58, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = ink;
+    ctx.font = '400 42px Anton, Impact, sans-serif';
+    ctx.letterSpacing = '1px';
+    ctx.fillText('E&O', cx, 154);
+    ctx.font = '400 54px Anton, Impact, sans-serif';
+    ctx.letterSpacing = '7px';
+    ctx.fillText('EMBER & OAK', cx, 246);
+    ctx.font = '600 19px Inter, sans-serif';
+    ctx.letterSpacing = '8px';
+    ctx.globalAlpha = 0.72;
+    ctx.fillText('SMALL BATCH ROASTERS · EST. 2019', cx, 298);
+    ctx.globalAlpha = 1;
+
+    // Tall origin label with its own visual language per coffee family.
+    const lx = 96, ly = 390, lw = w - 192, lh = 820;
+    ctx.shadowColor = 'rgba(20,8,4,0.22)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 8;
+    ctx.fillStyle = art.accentDeep;
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, lw, lh, 22);
     ctx.fill();
     ctx.shadowColor = 'transparent';
-    ctx.strokeStyle = 'rgba(255,245,230,0.35)';
-    ctx.lineWidth = 3;
+    drawPattern(ctx, art, lx, ly, lw, lh, '#fff4e6');
+    ctx.strokeStyle = 'rgba(255,245,230,0.48)';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.roundRect(lx + 22, ly + 22, lw - 44, lh - 44, 8);
+    ctx.roundRect(lx + 20, ly + 20, lw - 40, lh - 40, 12);
     ctx.stroke();
 
     const cream = '#f8efe2';
     ctx.fillStyle = cream;
-    ctx.font = '600 26px Inter, sans-serif';
+    ctx.font = '600 21px Inter, sans-serif';
+    ctx.letterSpacing = '6px';
+    ctx.textAlign = 'left';
+    ctx.fillText(art.edition.toUpperCase(), lx + 54, ly + 68);
+    ctx.textAlign = 'right';
+    ctx.fillText(art.lot, lx + lw - 54, ly + 68);
+
+    ctx.textAlign = 'left';
+    ctx.font = '600 28px Inter, sans-serif';
     ctx.letterSpacing = '8px';
-    ctx.fillText(bean.origin.toUpperCase(), cx, ly + 95);
+    ctx.fillText(bean.origin.toUpperCase(), lx + 54, ly + 148);
 
-    ctx.letterSpacing = '2px';
-    fitText(ctx, bean.name.toUpperCase(), lw - 110, 132, '400 {s}px Anton, Impact, sans-serif');
-    ctx.fillText(bean.name.toUpperCase(), cx, ly + 215);
+    ctx.letterSpacing = '1px';
+    fitText(ctx, bean.name.toUpperCase(), lw - 108, 126, '400 {s}px Anton, Impact, sans-serif');
+    const nameLines = wrapLines(ctx, bean.name.toUpperCase(), lw - 108).slice(0, 2);
+    nameLines.forEach((line, i) => ctx.fillText(line, lx + 54, ly + 252 + i * 104));
 
-    ctx.font = '500 26px Inter, sans-serif';
+    const detailY = ly + (nameLines.length > 1 ? 470 : 390);
+    ctx.fillStyle = cream;
+    ctx.font = '600 22px Inter, sans-serif';
     ctx.letterSpacing = '3px';
-    ctx.globalAlpha = 0.85;
-    ctx.fillText(bean.process.toUpperCase(), cx, ly + 315);
+    ctx.globalAlpha = 0.82;
+    ctx.fillText(bean.process.toUpperCase(), lx + 54, detailY);
     ctx.globalAlpha = 1;
 
-    ctx.fillStyle = 'rgba(248,239,226,0.4)';
-    ctx.fillRect(cx - 160, ly + 365, 320, 2);
-
+    ctx.fillStyle = 'rgba(248,239,226,0.12)';
+    ctx.beginPath();
+    ctx.roundRect(lx + 42, detailY + 56, lw - 84, 126, 14);
+    ctx.fill();
     ctx.fillStyle = cream;
-    ctx.font = 'italic 500 38px Inter, sans-serif';
+    ctx.font = 'italic 500 33px Inter, sans-serif';
     ctx.letterSpacing = '0px';
-    wrapLines(ctx, bean.notes, lw - 140).forEach((line, i) => ctx.fillText(line, cx, ly + 435 + i * 50));
+    wrapLines(ctx, bean.notes, lw - 150).slice(0, 2).forEach((line, i) => ctx.fillText(line, lx + 68, detailY + 104 + i * 42));
 
     // roast meter
-    ctx.font = '600 20px Inter, sans-serif';
+    ctx.font = '600 18px Inter, sans-serif';
     ctx.letterSpacing = '6px';
-    ctx.fillText('ROAST', cx, ly + 575);
+    ctx.fillText('ROAST PROFILE', lx + 54, ly + lh - 134);
     for (let i = 0; i < 5; i++) {
       ctx.beginPath();
-      ctx.arc(cx - 88 + i * 44, ly + 620, 13, 0, Math.PI * 2);
+      ctx.arc(lx + 64 + i * 40, ly + lh - 86, 11, 0, Math.PI * 2);
       ctx.fillStyle = i < bean.roast ? cream : 'rgba(248,239,226,0.25)';
       ctx.fill();
     }
 
     ctx.fillStyle = cream;
-    ctx.font = '600 22px Inter, sans-serif';
-    ctx.letterSpacing = '4px';
-    ctx.textAlign = 'left';
-    ctx.fillText('12 OZ · 340 G', lx + 60, ly + lh - 70);
+    ctx.font = '600 18px Inter, sans-serif';
+    ctx.letterSpacing = '3px';
     ctx.textAlign = 'right';
-    ctx.fillText('WHOLE BEAN', lx + lw - 60, ly + lh - 70);
+    ctx.fillText('12 OZ / 340 G · WHOLE BEAN', lx + lw - 54, ly + lh - 86);
 
     if (bean.badge) {
       ctx.textAlign = 'center';
       ctx.save();
-      ctx.translate(lx + lw - 40, ly + 30);
-      ctx.rotate(0.25);
-      ctx.fillStyle = '#d9a441';
+      ctx.translate(lx + lw - 52, ly + 34);
+      ctx.rotate(0.16);
+      ctx.fillStyle = art.accentSoft;
       ctx.beginPath();
-      ctx.arc(0, 0, 70, 0, Math.PI * 2);
+      ctx.arc(0, 0, 66, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#2a170d';
+      ctx.fillStyle = art.accentDeep;
       ctx.letterSpacing = '2px';
-      fitText(ctx, bean.badge.toUpperCase(), 118, 34, '400 {s}px Anton, Impact, sans-serif');
+      fitText(ctx, bean.badge.toUpperCase(), 110, 31, '400 {s}px Anton, Impact, sans-serif');
       ctx.fillText(bean.badge.toUpperCase(), 0, 2);
       ctx.restore();
     }
@@ -201,9 +296,9 @@ function frontTexture(bean) {
     ctx.textAlign = 'center';
     ctx.fillStyle = ink;
     ctx.globalAlpha = 0.75;
-    ctx.font = '600 20px Inter, sans-serif';
-    ctx.letterSpacing = '8px';
-    ctx.fillText('ROASTED IN SMALL BATCHES', cx, 1330);
+    ctx.font = '600 18px Inter, sans-serif';
+    ctx.letterSpacing = '7px';
+    ctx.fillText('ROASTED TUESDAY · POURED DAILY', cx, 1328);
     ctx.globalAlpha = 1;
   });
 }
@@ -295,6 +390,26 @@ export async function renderBagImages(beans, { width = 560, height = 680, onEach
   const seal = new THREE.Mesh(new THREE.BoxGeometry(W * 1.01, 0.13, 0.03), sealMat);
   seal.position.y = H / 2 + 0.05;
   bag.add(seal);
+
+  // Zipper rails and a lower gusset line keep the pouch from reading like a
+  // flat cardboard box in the product shots.
+  const zipperTop = new THREE.Mesh(new THREE.BoxGeometry(W * 0.91, 0.018, 0.026), sealMat);
+  zipperTop.position.set(0, H / 2 - 0.085, D * 0.19);
+  const zipperBottom = zipperTop.clone();
+  zipperBottom.position.y -= 0.038;
+  const gusset = new THREE.Mesh(new THREE.TorusGeometry(W * 0.41, 0.009, 6, 60, Math.PI), sealMat);
+  gusset.rotation.set(Math.PI / 2, 0, 0);
+  gusset.position.set(0, -H / 2 + 0.11, D * 0.31);
+  bag.add(zipperTop, zipperBottom, gusset);
+
+  const shadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.65, 0.72),
+    new THREE.MeshBasicMaterial({ map: shadowTexture(0.38), transparent: true, depthWrite: false }),
+  );
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.set(0, -H / 2 - 0.035, 0.05);
+  shadow.renderOrder = -1;
+  scene.add(shadow);
 
   const valveMat = new THREE.MeshStandardMaterial({ roughness: 0.35 });
   const valveSide = new THREE.MeshStandardMaterial({ roughness: 0.35 });

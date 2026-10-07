@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { createStage, createProduct, createBeanField, ease } from './scene.js';
 import { initChrome, $, $$, reduceMotion, money, slug, reveal, countUp, fontsReady, createSpin, getBagImages, hoursFor, fmtHour, openStatus } from './common.js';
 import { DRINKS, BEANS, STORY, LOCATION, DAY } from './content.js';
+import { bagArt, drinkArt } from './product-art.mjs';
 
 const { smoothstep, lerp, clamp } = THREE.MathUtils;
 initChrome('home');
@@ -48,28 +49,38 @@ $('#process').innerHTML = STORY.steps.map((s, i) => `
 /* ---------- Featured drinks + beans ---------- */
 
 const FEATURED_DRINKS = ['Caramel Cloud', 'Mocha Midnight', 'Matcha Meadow'];
-$('#featured-drinks').innerHTML = FEATURED_DRINKS.map((n) => DRINKS.find((d) => d.name === n)).map((d, i) => `
-  <li data-reveal style="--bg:${d.bg};--ink:${d.ink};transition-delay:${i * 80}ms">
+$('#featured-drinks').innerHTML = FEATURED_DRINKS.map((n) => DRINKS.find((d) => d.name === n)).map((d, i) => {
+  const art = drinkArt(d, DRINKS.indexOf(d));
+  return `
+  <li data-reveal style="--bg:${art.accent};--ink:${art.ink};transition-delay:${i * 80}ms">
     <a href="menu.html#${slug(d.name)}" class="drink-card">
       <span class="drink-visual" aria-hidden="true">
+        <span class="product-kicker"><span>${art.label}</span><b>${art.number}</b></span>
         <img class="drink-img front" src="img/drinks/${slug(d.name)}-front.webp" alt="" width="960" height="1140" decoding="async">
         <img class="drink-img angle" src="img/drinks/${slug(d.name)}-angle.webp" alt="" width="960" height="1140" decoding="async" fetchpriority="low">
       </span>
       <span class="drink-card-name">${d.name}</span>
       <span class="drink-card-desc">${d.desc}</span>
-      <span class="drink-card-price">${money(d.price)}</span>
+      <span class="drink-card-foot"><span class="drink-card-price">${money(d.price)}</span><span class="card-link">View drink <b>↗</b></span></span>
     </a>
-  </li>`).join('');
+  </li>`;
+}).join('');
 
 const featuredBeans = BEANS.filter((b) => b.featured).sort((a, b) => a.featured - b.featured).slice(0, 3);
-$('#featured-beans').innerHTML = featuredBeans.map((b, i) => `
-  <li data-reveal style="--hue:${b.hue};transition-delay:${i * 80}ms">
+$('#featured-beans').innerHTML = featuredBeans.map((b, i) => {
+  const art = bagArt(b);
+  return `
+  <li data-reveal style="--hue:${b.hue};--accent:${art.accent};--accent-deep:${art.accentDeep};--accent-soft:${art.accentSoft};transition-delay:${i * 80}ms">
     <a href="shop.html#${slug(b.name)}" class="bean-tile">
-      <span class="bean-tile-visual"><span class="bag-slot" data-bag="${b.name}"><span class="bag-skeleton"></span></span></span>
+      <span class="bean-tile-visual" data-pattern="${art.pattern}">
+        <span class="bag-stage-meta" aria-hidden="true"><span>${art.edition}</span><b>${art.lot}</b></span>
+        <span class="bag-slot" data-bag="${b.name}"><span class="bag-skeleton"></span></span>
+      </span>
       <span class="bean-tile-row"><strong>${b.name}</strong><span>$${b.price}</span></span>
       <span class="bean-tile-notes">${b.origin} · ${b.notes}</span>
     </a>
-  </li>`).join('');
+  </li>`;
+}).join('');
 
 /* ---------- A day at Ember & Oak ---------- */
 

@@ -328,14 +328,22 @@ export function buildIcedCup() {
   const liquidGeo = new THREE.LatheGeometry(pts, 72);
   const pos = liquidGeo.attributes.position;
   liquidGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(pos.count * 3), 3));
-  const liquid = new THREE.Mesh(liquidGeo, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.3, clearcoat: 0.3 }));
+  const liquid = new THREE.Mesh(liquidGeo, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.24, clearcoat: 0.48, clearcoatRoughness: 0.12 }));
   g.add(liquid);
+
+  // A separate glossy surface gives the drink a convincing meniscus instead
+  // of letting the top read like a flat cap on the lathed liquid mesh.
+  const surfaceMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04, transparent: true, opacity: 0.72, depthWrite: false });
+  const meniscus = new THREE.Mesh(new THREE.CircleGeometry(1, 72), surfaceMat);
+  meniscus.rotation.x = -Math.PI / 2;
+  meniscus.renderOrder = 1;
+  g.add(meniscus);
 
   // Clear plastic shell. (Transmission would look nicer but needs an opaque
   // background, and our canvas is transparent over the CSS colours.)
   const shellMat = new THREE.MeshPhysicalMaterial({
-    color: '#ffffff', roughness: 0.06, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.05,
-    transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false,
+    color: '#f5fbff', roughness: 0.04, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.035,
+    transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false,
   });
   const shell = new THREE.Mesh(
     new THREE.LatheGeometry([[0, 0], [R0, 0], [R0 + 0.01, 0.02], [R1, CUP_H - 0.02], [R1 + 0.02, CUP_H]].map(v2), 72),
@@ -349,16 +357,20 @@ export function buildIcedCup() {
   rim.rotation.x = Math.PI / 2;
   rim.position.y = CUP_H;
   rim.renderOrder = 2;
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(R1 - 0.012, 0.032, 12, 72), rimMat);
+  lip.rotation.x = Math.PI / 2;
+  lip.position.y = CUP_H - 0.026;
+  lip.renderOrder = 2;
   const foot = new THREE.Mesh(new THREE.TorusGeometry(R0 + 0.008, 0.014, 8, 72), rimMat);
   foot.rotation.x = Math.PI / 2;
   foot.position.y = 0.02;
-  g.add(rim, foot);
+  g.add(rim, lip, foot);
 
   // Printed logo on the cup, wrapping with the taper.
   const py0 = 0.5, py1 = 1.1;
   const print = new THREE.Mesh(
     new THREE.CylinderGeometry(rAt(py1) + 0.012, rAt(py0) + 0.012, py1 - py0, 96, 1, true),
-    new THREE.MeshStandardMaterial({ map: cupPrintTexture(), transparent: true, depthWrite: false, roughness: 0.5 }),
+    new THREE.MeshBasicMaterial({ map: cupPrintTexture(), transparent: true, opacity: 0.94, depthWrite: false, toneMapped: false }),
   );
   print.position.y = (py0 + py1) / 2;
   print.rotation.y = Math.PI;
@@ -367,10 +379,10 @@ export function buildIcedCup() {
 
   // Condensation: tiny flattened droplets hugging the cold part of the cup,
   // plus a few longer drips.
-  const DROPS = 460;
+  const DROPS = 300;
   const drops = new THREE.InstancedMesh(
     new THREE.SphereGeometry(1, 10, 8),
-    new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.04, clearcoat: 1, transparent: true, opacity: 0.5, depthWrite: false }),
+    new THREE.MeshPhysicalMaterial({ color: '#f4fbff', roughness: 0.08, clearcoat: 1, transparent: true, opacity: 0.4, depthWrite: false }),
     DROPS,
   );
   const d = new THREE.Object3D();
@@ -380,8 +392,8 @@ export function buildIcedCup() {
     const r = rAt(y) + 0.016;
     d.position.set(Math.sin(a) * r, y, Math.cos(a) * r);
     d.lookAt(Math.sin(a) * 2, y, Math.cos(a) * 2);
-    const drip = i < 14;
-    const s = drip ? rand(0.012, 0.016) : Math.random() < 0.1 ? rand(0.02, 0.03) : rand(0.005, 0.014);
+    const drip = i < 10;
+    const s = drip ? rand(0.011, 0.015) : Math.random() < 0.08 ? rand(0.018, 0.026) : rand(0.004, 0.011);
     d.scale.set(s, drip ? s * rand(3, 5) : s * rand(1, 1.3), s * 0.45);
     d.updateMatrix();
     drops.setMatrixAt(i, d.matrix);
@@ -391,7 +403,8 @@ export function buildIcedCup() {
 
   // Ice
   const iceMat = new THREE.MeshPhysicalMaterial({
-    color: '#f4fbff', roughness: 0.12, clearcoat: 1, transparent: true, opacity: 0.6, depthWrite: false,
+    color: '#edf9ff', roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.04,
+    transparent: true, opacity: 0.72, depthWrite: false, emissive: '#102a34', emissiveIntensity: 0.12,
   });
   const iceGeo = new RoundedBoxGeometry(0.28, 0.28, 0.28, 3, 0.06);
   // Each cube has a resting spot in a little pile on the bottom of the empty
@@ -399,6 +412,7 @@ export function buildIcedCup() {
   const PILE = [
     [-0.16, 0.17, -0.12], [0.16, 0.17, -0.14], [-0.1, 0.17, 0.17], [0.17, 0.17, 0.14],
     [0.02, 0.43, -0.02], [-0.19, 0.45, 0.04], [0.19, 0.46, 0.06], [0.0, 0.44, 0.22],
+    [-0.28, 0.7, -0.06], [0.27, 0.72, -0.1], [-0.1, 0.72, 0.24], [0.1, 0.76, -0.24],
   ];
   const ice = PILE.map((rest, i) => {
     const m = new THREE.Mesh(iceGeo, iceMat);
@@ -411,6 +425,9 @@ export function buildIcedCup() {
       spin: new THREE.Vector3(rand(-6, 6), rand(-6, 6), rand(-6, 6)),
       dropAt: i * 0.075,
     };
+    const cubeScale = rand(0.82, 1.08);
+    m.scale.set(cubeScale, cubeScale * rand(0.88, 1.08), cubeScale);
+    m.userData.baseScale = m.scale.clone();
     m.rotation.copy(m.userData.rot);
     m.renderOrder = 1;
     g.add(m);
@@ -419,6 +436,12 @@ export function buildIcedCup() {
 
   const strawMat = new THREE.MeshStandardMaterial({ color: '#2b140a', roughness: 0.35 });
   const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 2.3, 18), strawMat);
+  const strawShine = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.009, 0.009, 2.18, 8),
+    new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, toneMapped: false }),
+  );
+  strawShine.position.set(-0.026, 0.02, 0.038);
+  straw.add(strawShine);
   const STRAW_Y = 1.95;
   straw.position.set(0.2, STRAW_Y, -0.1);
   straw.rotation.set(0.1, 0, -0.2);
@@ -453,6 +476,15 @@ export function buildIcedCup() {
   const sauceMat = new THREE.MeshPhysicalMaterial({ color: '#b5641c', roughness: 0.15, clearcoat: 1 });
   const foamGeo = foamGeometry();
   const foam = new THREE.Mesh(foamGeo, creamMat);
+  const bubbleMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.48, clearcoat: 0.35 });
+  const foamBubbles = new THREE.Group();
+  for (let i = 0; i < 22; i++) {
+    const a = rand(0, Math.PI * 2), r = Math.sqrt(Math.random()) * foamGeo.userData.rTop * 0.8;
+    const bubble = new THREE.Mesh(new THREE.SphereGeometry(rand(0.012, 0.025), 10, 8), bubbleMat);
+    bubble.position.set(Math.cos(a) * r, foamGeo.userData.top + rand(-0.018, 0.018), Math.sin(a) * r);
+    bubble.scale.y = rand(0.55, 0.9);
+    foamBubbles.add(bubble);
+  }
   const whipGeo = whipGeometry();
   const whipCurve = whipGeo.userData.curve;
   const whip = new THREE.Group();
@@ -479,14 +511,18 @@ export function buildIcedCup() {
   }
   const drizzleFoam = new THREE.Mesh(drizzleOnFoam(foamGeo.userData.top, foamGeo.userData.rTop * 0.92), sauceMat);
   const drizzleWhip = new THREE.Mesh(drizzleOnWhip(whipGeo.userData.curve), sauceMat);
-  topping.add(foam, whip, drizzleFoam, drizzleWhip);
+  topping.add(foam, foamBubbles, whip, drizzleFoam, drizzleWhip);
 
   function applyTopping(t) {
     foam.visible = t?.type === 'foam';
+    foamBubbles.visible = foam.visible;
     whip.visible = t?.type === 'whip';
     drizzleFoam.visible = foam.visible && !!t.drizzle;
     drizzleWhip.visible = whip.visible && !!t.drizzle;
-    if (t) creamMat.color.set(t.color);
+    if (t) {
+      creamMat.color.set(t.color);
+      bubbleMat.color.set(t.color).offsetHSL(0, -0.05, 0.05);
+    }
     if (t?.drizzle) sauceMat.color.set(t.drizzle);
   }
 
@@ -507,6 +543,7 @@ export function buildIcedCup() {
       colors.setXYZ(i, tmp.r, tmp.g, tmp.b);
     }
     colors.needsUpdate = true;
+    surfaceMat.color.copy(cur.top).offsetHSL(0, -0.06, 0.08);
     strawMat.color.copy(cur.straw);
   }
 
@@ -588,15 +625,18 @@ export function buildIcedCup() {
     liquid.visible = pour.level > 0.04;
     liquid.scale.y = Math.max(pour.level, 0.01);
     const surface = surfaceY();
+    meniscus.visible = pour.level > 0.04;
+    meniscus.position.y = surface + 0.008;
+    meniscus.scale.setScalar(liquidR(surface) * 0.98);
     ice.forEach((m, i) => {
       const u = m.userData;
       // Old ice clears out while the cup drains.
       if (t < T.drainEnd) {
         m.visible = true;
-        m.scale.setScalar(Math.max(1 - t / T.drainEnd, 1e-3));
+        m.scale.copy(u.baseScale).multiplyScalar(Math.max(1 - t / T.drainEnd, 1e-3));
         return;
       }
-      m.scale.setScalar(1);
+      m.scale.copy(u.baseScale);
       // New ice tumbles in from above and bounces into a pile.
       const fall = (t - T.iceStart - u.dropAt) / T.iceFall;
       m.visible = fall >= 0;

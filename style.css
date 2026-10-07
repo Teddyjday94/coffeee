@@ -247,9 +247,23 @@ body.ready .hero h1 .line > span { transform: none; }
   aspect-ratio: 1;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  background: color-mix(in srgb, var(--drink-bg, #d88a45) 50%, #fff4e6);
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255,255,255,0.56), transparent 26%),
+    color-mix(in srgb, var(--drink-bg, #d88a45) 50%, #fff4e6);
+  box-shadow:
+    0 44px 90px color-mix(in srgb, var(--drink-ink, #2b140a) 18%, transparent),
+    inset 0 0 0 1px rgba(255,255,255,0.3);
   transition: background-color 0.9s var(--ease-out);
 }
+.drink-disc::before, .drink-disc::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.drink-disc::before { inset: -13%; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); }
+.drink-disc::after { inset: 12%; border: 1px dashed color-mix(in srgb, currentColor 24%, transparent); animation: orbit 26s linear infinite; }
+@keyframes orbit { to { transform: rotate(360deg); } }
 .drink-disc.pulse { animation: pulse 0.9s var(--ease-out); }
 @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(0.9); } 100% { transform: translate(-50%, -50%) scale(1); } }
 .drink-name {
@@ -336,13 +350,14 @@ body.ready .hero h1 .line > span { transform: none; }
   gap: 24px;
 }
 .card {
-  background: var(--card);
+  background: linear-gradient(145deg, #fffdf9, var(--card));
   border: 1px solid var(--line);
   border-radius: 24px;
   padding: 14px;
+  box-shadow: 0 10px 34px rgba(43, 22, 16, 0.06);
   transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out), opacity 0.8s var(--ease-out);
 }
-.card:hover { box-shadow: 0 24px 50px rgba(43, 22, 16, 0.14); }
+.card:hover { box-shadow: 0 28px 60px rgba(43, 22, 16, 0.16); }
 .card-visual {
   position: relative;
   aspect-ratio: 1 / 1.05;
@@ -350,16 +365,78 @@ body.ready .hero h1 .line > span { transform: none; }
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: radial-gradient(circle at var(--mx, 50%) var(--my, 40%), hsl(var(--hue), 60%, 93%), hsl(var(--hue), 45%, 82%));
+  isolation: isolate;
+  background:
+    radial-gradient(circle at var(--mx, 50%) var(--my, 34%), rgba(255,255,255,0.95) 0 10%, transparent 36%),
+    radial-gradient(circle at 50% 46%, var(--accent-soft, hsl(var(--hue), 72%, 88%)), color-mix(in srgb, var(--accent, hsl(var(--hue), 68%, 42%)) 34%, #f8eee4));
 }
-.bag-slot { position: absolute; inset: 0; }
+.card-visual::before, .bean-tile-visual::before, .product-visual::before, .subscribe-visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.25;
+  pointer-events: none;
+  background-image: repeating-radial-gradient(circle at 76% 20%, transparent 0 20px, var(--accent, currentColor) 21px 22px, transparent 23px 46px);
+  mask-image: linear-gradient(to bottom, #000, transparent 72%);
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 72%);
+}
+:is(.card-visual, .bean-tile-visual, .product-visual, .subscribe-visual)[data-pattern='terrace']::before {
+  background-image: repeating-radial-gradient(ellipse at 70% 15%, transparent 0 26px, var(--accent, currentColor) 27px 29px, transparent 30px 58px);
+}
+:is(.card-visual, .bean-tile-visual, .product-visual, .subscribe-visual)[data-pattern='night']::before {
+  background-image: radial-gradient(circle at 18% 20%, var(--accent-soft) 0 2px, transparent 3px), radial-gradient(circle at 76% 14%, var(--accent) 0 4px, transparent 5px), radial-gradient(circle at 84% 35%, var(--accent-soft) 0 2px, transparent 3px);
+  background-size: 68px 68px, 110px 110px, 84px 84px;
+}
+:is(.card-visual, .bean-tile-visual, .product-visual, .subscribe-visual)[data-pattern='botanical']::before {
+  background-image: repeating-linear-gradient(62deg, transparent 0 34px, color-mix(in srgb, var(--accent) 65%, transparent) 35px 37px, transparent 38px 74px);
+}
+:is(.card-visual, .bean-tile-visual, .product-visual, .subscribe-visual)[data-pattern='mosaic']::before {
+  background-image: linear-gradient(45deg, transparent 46%, var(--accent) 47% 49%, transparent 50%), linear-gradient(-45deg, transparent 46%, var(--accent) 47% 49%, transparent 50%);
+  background-size: 74px 74px;
+}
+:is(.card-visual, .bean-tile-visual, .product-visual, .subscribe-visual)[data-pattern='sunburst']::before {
+  background-image: repeating-conic-gradient(from 12deg at 78% 18%, var(--accent) 0 2deg, transparent 2deg 14deg);
+}
+.card-visual::after, .bean-tile-visual::after, .product-visual::after, .subscribe-visual::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 18%;
+  right: 18%;
+  bottom: 7%;
+  height: 10%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent-deep, var(--ink)) 32%, transparent);
+  filter: blur(15px);
+  transform: perspective(180px) rotateX(62deg);
+}
+.bag-stage-meta {
+  position: absolute;
+  z-index: 4;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--accent-deep, var(--ink));
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.bag-stage-meta b { font-weight: 700; }
+.product-visual .bag-stage-meta, .subscribe-visual .bag-stage-meta { top: 22px; bottom: auto; color: var(--accent-deep, var(--paper)); }
+.subscribe-visual .bag-stage-meta { color: var(--paper); opacity: 0.8; }
+.bag-slot { position: absolute; inset: 0; z-index: 2; }
 .bag-img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 22px 16px rgba(43, 22, 16, 0.28)) drop-shadow(0 4px 4px rgba(43, 22, 16, 0.18));
+  filter: saturate(1.04) contrast(1.025) drop-shadow(0 24px 18px rgba(43, 22, 16, 0.3)) drop-shadow(0 5px 5px rgba(43, 22, 16, 0.16));
   transition: opacity 0.5s var(--ease-out), transform 0.7s var(--ease-out);
   animation: bagIn 0.8s var(--ease-out) both;
 }
@@ -382,13 +459,13 @@ body.ready .hero h1 .line > span { transform: none; }
 .badge, .roast-chip {
   position: absolute;
   top: 12px;
-  z-index: 1;
+  z-index: 4;
   padding: 5px 10px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
 }
-.roast-chip { left: 12px; background: rgba(255, 250, 244, 0.75); backdrop-filter: blur(6px); }
+.roast-chip { left: 12px; background: rgba(255, 250, 244, 0.8); backdrop-filter: blur(8px); box-shadow: 0 5px 14px rgba(43,22,16,0.08); }
 .badge { right: 12px; background: #d9a441; color: #2a170d; text-transform: uppercase; letter-spacing: 0.08em; }
 .card-body { padding: 16px 6px 6px; }
 .card-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
@@ -713,44 +790,93 @@ body.drawer-open { overflow: hidden; }
   display: grid;
   align-content: end;
   gap: 6px;
-  min-height: 520px;
+  min-height: 560px;
   padding: 28px;
   border-radius: 28px;
   overflow: hidden;
-  background: radial-gradient(120% 80% at 50% 30%, color-mix(in srgb, var(--bg) 82%, #fff) 0%, var(--bg) 60%);
+  isolation: isolate;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,0.28), transparent 36%),
+    radial-gradient(120% 82% at 50% 22%, color-mix(in srgb, var(--bg) 76%, #fff) 0%, var(--bg) 64%);
   color: var(--ink);
   text-decoration: none;
-  transition: transform 0.6s var(--ease-out);
+  border: 1px solid rgba(255,255,255,0.34);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 18px 44px color-mix(in srgb, var(--bg) 30%, transparent);
+  transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out);
 }
-.drink-card:hover { transform: translateY(-8px); }
+.drink-card::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: repeating-linear-gradient(105deg, transparent 0 62px, rgba(255,255,255,0.08) 63px 64px, transparent 65px 126px);
+  mask-image: linear-gradient(to bottom, #000, transparent 70%);
+}
+.drink-card:hover { transform: translateY(-8px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 28px 58px color-mix(in srgb, var(--bg) 42%, transparent); }
 /* Image area: a soft disc with the pre-rendered 3D drink (img/drinks/) on top */
-.drink-visual { position: absolute; top: 12px; left: 0; right: 0; height: 360px; }
+.drink-visual { position: absolute; z-index: 1; top: 0; left: 0; right: 0; height: 390px; }
 .drink-visual::before {
   content: '';
   position: absolute;
-  top: 46px;
+  top: 58px;
   left: 50%;
-  width: 250px;
-  height: 250px;
+  width: 270px;
+  height: 270px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--bg) 50%, #fff4e6);
   transform: translateX(-50%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.38), 0 34px 60px color-mix(in srgb, var(--ink) 18%, transparent);
 }
+.drink-visual::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 21%;
+  right: 21%;
+  bottom: 8px;
+  height: 38px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ink) 36%, transparent);
+  filter: blur(17px);
+  transform: perspective(180px) rotateX(64deg);
+}
+.product-kicker {
+  position: absolute;
+  z-index: 4;
+  top: 20px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.product-kicker b { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid currentColor; border-radius: 50%; font-size: 10px; }
 .drink-img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  z-index: 2;
+  filter: saturate(1.08) contrast(1.03) drop-shadow(0 20px 16px color-mix(in srgb, var(--ink) 24%, transparent));
   transition: opacity 0.5s var(--ease-out), transform 0.8s var(--ease-out);
 }
 .drink-img.angle { opacity: 0; }
 .drink-card:hover .drink-img { transform: translateY(-6px) scale(1.04); }
 .drink-card:hover .drink-img.front { opacity: 0; }
 .drink-card:hover .drink-img.angle { opacity: 1; }
+.drink-card-name, .drink-card-desc, .drink-card-foot { position: relative; z-index: 3; }
 .drink-card-name { font-family: var(--display); font-size: clamp(34px, 3.4vw, 52px); line-height: 0.95; text-transform: uppercase; }
 .drink-card-desc { font-size: 14px; opacity: 0.8; }
 .drink-card-price { font-family: var(--display); font-size: 26px; }
+.drink-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 5px; padding-top: 12px; border-top: 1px solid color-mix(in srgb, currentColor 20%, transparent); }
+.card-link { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.card-link b { display: inline-block; font-size: 15px; transition: transform 0.35s var(--ease-out); }
+.drink-card:hover .card-link b { transform: translate(3px, -3px); }
 .bean-tile { display: grid; gap: 10px; text-decoration: none; }
 .bean-tile-visual {
   position: relative;
@@ -758,7 +884,11 @@ body.drawer-open { overflow: hidden; }
   aspect-ratio: 1 / 1.1;
   border-radius: 24px;
   overflow: hidden;
-  background: radial-gradient(circle at 50% 40%, hsl(var(--hue), 60%, 93%), hsl(var(--hue), 45%, 80%));
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(255,255,255,0.9), transparent 34%),
+    linear-gradient(145deg, var(--accent-soft, hsl(var(--hue), 72%, 88%)), color-mix(in srgb, var(--accent, hsl(var(--hue), 68%, 42%)) 36%, #f2dfcf));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.56), 0 16px 36px rgba(43,22,16,0.08);
 }
 .bean-tile:hover .bag-img { transform: translateY(-6px) scale(1.03); }
 .bean-tile:hover .bag-img.front { opacity: 0; }
@@ -952,13 +1082,17 @@ button.card-visual { width: 100%; padding: 0; border: 0; cursor: zoom-in; }
 .product-visual {
   position: relative;
   min-height: 520px;
-  background: radial-gradient(circle at 50% 40%, hsl(var(--hue), 60%, 93%), hsl(var(--hue), 45%, 80%));
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(255,255,255,0.96), transparent 34%),
+    linear-gradient(145deg, var(--accent-soft, hsl(var(--hue), 72%, 88%)), color-mix(in srgb, var(--accent, hsl(var(--hue), 68%, 42%)) 38%, #f2dfcf));
 }
 .product-visual .bag-slot { inset: 6% 6% 14%; }
 .product .bag-img.angle { opacity: 0; }
 .product[data-view='angle'] .bag-img.front { opacity: 0; }
 .product[data-view='angle'] .bag-img.angle { opacity: 1; }
-.product-views { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(255, 250, 244, 0.75); }
+.product-views { position: absolute; z-index: 4; left: 50%; bottom: 20px; transform: translateX(-50%); display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(255, 250, 244, 0.82); backdrop-filter: blur(8px); box-shadow: 0 8px 22px rgba(43,22,16,0.12); }
 .product-views button { padding: 8px 16px; border: 0; border-radius: 999px; background: transparent; font-size: 13px; font-weight: 600; }
 .product-views button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
 .product-info { padding: 48px 40px 40px; display: grid; gap: 14px; align-content: start; }
@@ -999,7 +1133,9 @@ button.card-visual { width: 100%; padding: 0; border: 0; cursor: zoom-in; }
 .subscribe-visual {
   position: relative;
   min-height: 560px;
-  background: radial-gradient(circle at 50% 45%, hsl(var(--hue, 20), 50%, 40%), #1a0d08 75%);
+  isolation: isolate;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent, hsl(var(--hue, 20), 50%, 40%)) 72%, #fff) 0%, var(--accent-deep, #1a0d08) 72%);
   transition: background 0.6s;
 }
 .subscribe-visual .bag-slot { inset: 10%; }
@@ -1190,7 +1326,8 @@ button.card-visual { width: 100%; padding: 0; border: 0; cursor: zoom-in; }
   .tl-dot { top: 4px; }
   .bean-feature { grid-template-columns: 1fr 1fr; }
   .bean-feature li:nth-child(3) { display: none; }
-  .drink-card { min-height: 500px; }
+  .drink-card { min-height: 540px; padding: 24px; }
+  .drink-visual { height: 365px; }
   .feature, .menu-page, .brew-guide { padding: 80px var(--gutter); }
   .visit-strip, .split, .subscribe, .product-grid { grid-template-columns: 1fr; }
   .visit-strip { padding: 80px var(--gutter); gap: 28px; }

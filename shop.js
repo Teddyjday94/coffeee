@@ -1,5 +1,6 @@
 import { initChrome, $, $$, reduceMotion, money, slug, reveal, getBagImages } from './common.js';
 import { BEANS, GRINDS, BAG_SIZES, SUBSCRIPTION, BREW_GUIDE } from './content.js';
+import { bagArt } from './product-art.mjs';
 
 const { cart } = initChrome('shop');
 const ROAST = ['Light', 'Light', 'Light-medium', 'Medium', 'Medium-dark', 'Dark'];
@@ -44,9 +45,11 @@ function renderGrid() {
   $('#result-count').textContent = `${list.length} coffee${list.length === 1 ? '' : 's'}`;
   grid.innerHTML = list.map((b) => {
     const i = BEANS.indexOf(b);
+    const art = bagArt(b);
     return `
-    <li class="card" style="--hue:${b.hue}" data-reveal>
-      <button type="button" class="card-visual" data-open="${i}" aria-label="View details for ${b.name}">
+    <li class="card" style="--hue:${b.hue};--accent:${art.accent};--accent-deep:${art.accentDeep};--accent-soft:${art.accentSoft}" data-reveal>
+      <button type="button" class="card-visual" data-pattern="${art.pattern}" data-open="${i}" aria-label="View details for ${b.name}">
+        <span class="bag-stage-meta" aria-hidden="true"><span>${art.edition}</span><b>${art.lot}</b></span>
         ${b.badge ? `<span class="badge">${b.badge}</span>` : ''}
         <span class="roast-chip">${ROAST[b.roast]} roast</span>
         <span class="bag-slot" data-bag="${b.name}">${bagMarkup(b.name)}</span>
@@ -113,9 +116,15 @@ function roastMeter(r) {
 
 function openProduct(b) {
   productBean = b;
+  const art = bagArt(b);
   dialog.style.setProperty('--hue', b.hue);
+  dialog.style.setProperty('--accent', art.accent);
+  dialog.style.setProperty('--accent-deep', art.accentDeep);
+  dialog.style.setProperty('--accent-soft', art.accentSoft);
+  $('#product-visual').dataset.pattern = art.pattern;
   $('#product-visual').querySelector('.bag-slot')?.remove();
-  $('#product-visual').insertAdjacentHTML('afterbegin', `<span class="bag-slot" data-bag="${b.name}">${bagMarkup(b.name)}</span>`);
+  $('#product-visual').querySelector('.bag-stage-meta')?.remove();
+  $('#product-visual').insertAdjacentHTML('afterbegin', `<span class="bag-stage-meta" aria-hidden="true"><span>${art.edition}</span><b>${art.lot}</b></span><span class="bag-slot" data-bag="${b.name}">${bagMarkup(b.name)}</span>`);
   setView('front');
   $('#product-info').innerHTML = `
     <p class="eyebrow">${b.origin}${b.badge ? ` · ${b.badge}` : ''}</p>
@@ -186,11 +195,16 @@ $('#sub-grind').innerHTML = GRINDS.map((g) => `<option>${g}</option>`).join('');
 
 function updateSub() {
   const b = BEANS[Number(subBean.value)];
+  const art = bagArt(b);
   const price = b.price * (1 - SUBSCRIPTION.discount);
   $('#sub-price').innerHTML = `<s>$${b.price}</s> <strong>${money(price)}</strong> <span>per 12 oz bag, shipping included</span>`;
   const visual = $('#sub-visual');
   visual.style.setProperty('--hue', b.hue);
-  visual.innerHTML = `<span class="bag-slot" data-bag="${b.name}">${bagMarkup(b.name)}</span>`;
+  visual.style.setProperty('--accent', art.accent);
+  visual.style.setProperty('--accent-deep', art.accentDeep);
+  visual.style.setProperty('--accent-soft', art.accentSoft);
+  visual.dataset.pattern = art.pattern;
+  visual.innerHTML = `<span class="bag-stage-meta" aria-hidden="true"><span>${art.edition}</span><b>${art.lot}</b></span><span class="bag-slot" data-bag="${b.name}">${bagMarkup(b.name)}</span>`;
 }
 subBean.addEventListener('change', updateSub);
 $('#sub-form').addEventListener('submit', (e) => {
